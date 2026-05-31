@@ -80,7 +80,6 @@ export default function Page() {
           <div className="logo">🚗</div>
           <div>
             <h1>CarFinder</h1>
-            <div className="subtitle">Kleinanzeigen · intelligent bewertet von Gemini</div>
           </div>
         </div>
       </div>

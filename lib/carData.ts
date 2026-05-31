@@ -16,7 +16,7 @@ export const CAR_DATA: Record<string, string[]> = {
     'TT', 'e-tron', 'S3', 'S4', 'RS3', 'RS6',
   ],
   Mercedes: [
-    'A-Klasse', 'B-Klasse', 'C-Klasse', 'E-Klasse', 'S-Klasse', 'CLA', 'CLS',
+    'A-Klasse', 'B-Klasse', 'C-Klasse', 'E-Klasse', 'S-Klasse', 'CLA', 'CLK', 'CLS',
     'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'SLK', 'SL', 'Vito', 'Viano', 'Sprinter', 'V-Klasse',
   ],
   Opel: [

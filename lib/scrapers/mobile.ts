@@ -176,6 +176,7 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
         year,
         fuel,
         gearbox,
+        bodyType: null,
         power_kw,
         location: data.location || null,
         description: data.description || '',

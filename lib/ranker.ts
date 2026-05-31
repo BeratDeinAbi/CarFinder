@@ -62,6 +62,7 @@ function buildUserContent(l: NormalizedListing, wish: string | undefined): strin
       baujahr: l.year,
       kraftstoff: l.fuel,
       getriebe: l.gearbox,
+      karosserie: l.bodyType,
       leistung_kw: l.power_kw,
       ort: l.location,
       quelle: l.source,

@@ -1,8 +1,19 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Fuel, SearchFilters } from '@/lib/scrapers/types';
+import type { BodyType, Fuel, SearchFilters } from '@/lib/scrapers/types';
 import { BRANDS, modelsForBrand } from '@/lib/carData';
+
+const BODY_TYPES: { value: BodyType | 'any'; label: string }[] = [
+  { value: 'any', label: 'Egal' },
+  { value: 'estate', label: 'Kombi' },
+  { value: 'sedan', label: 'Limousine' },
+  { value: 'convertible', label: 'Cabrio' },
+  { value: 'suv', label: 'SUV / Geländewagen' },
+  { value: 'coupe', label: 'Coupé / Sportwagen' },
+  { value: 'small', label: 'Kleinwagen' },
+  { value: 'van', label: 'Van / Bus' },
+];
 
 interface Props {
   onSubmit: (filters: SearchFilters) => void;
@@ -26,6 +37,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
   const [kmMax, setKmMax] = useState('150000');
   const [fuels, setFuels] = useState<Fuel[]>([]);
   const [gearbox, setGearbox] = useState<'manual' | 'automatic' | 'any'>('any');
+  const [bodyType, setBodyType] = useState<BodyType | 'any'>('any');
   const [zip, setZip] = useState('10115');
   const [radiusKm, setRadiusKm] = useState('100');
   const [wish, setWish] = useState('alltagstauglich, zuverlässig, wenig Reparaturen');
@@ -58,6 +70,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
       kmMax: kmMax ? Number(kmMax) : undefined,
       fuels: fuels.length ? fuels : undefined,
       gearbox,
+      bodyType,
       zip: zip.trim() || undefined,
       radiusKm: radiusKm ? Number(radiusKm) : undefined,
       wish: wish.trim() || undefined,
@@ -156,6 +169,17 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
           <option value="any">Egal</option>
           <option value="manual">Schalter</option>
           <option value="automatic">Automatik</option>
+        </select>
+      </div>
+
+      <div className="field">
+        <label>Karosserieform</label>
+        <select value={bodyType} onChange={(e) => setBodyType(e.target.value as BodyType | 'any')}>
+          {BODY_TYPES.map((b) => (
+            <option key={b.value} value={b.value}>
+              {b.label}
+            </option>
+          ))}
         </select>
       </div>
 

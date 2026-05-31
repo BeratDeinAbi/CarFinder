@@ -35,6 +35,7 @@ function db(): DatabaseSync {
       year INTEGER,
       fuel TEXT,
       gearbox TEXT,
+      body_type TEXT,
       power_kw INTEGER,
       location TEXT,
       description TEXT NOT NULL,
@@ -61,6 +62,13 @@ function db(): DatabaseSync {
       PRIMARY KEY (listing_id, wish_hash)
     );
   `);
+
+  // Migration: body_type-Spalte für bereits existierende Datenbanken nachrüsten.
+  const cols = _db.prepare(`PRAGMA table_info(listings)`).all() as Array<{ name: string }>;
+  if (!cols.some((c) => c.name === 'body_type')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN body_type TEXT`);
+  }
+
   return _db;
 }
 
@@ -116,11 +124,11 @@ export function getJob(id: string): JobInfo | null {
 export function upsertListing(l: NormalizedListing): void {
   db()
     .prepare(
-      `INSERT INTO listings (id, source, platform_id, url, title, price, km, year, fuel, gearbox, power_kw, location, description, thumbnail, fetched_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO listings (id, source, platform_id, url, title, price, km, year, fuel, gearbox, body_type, power_kw, location, description, thumbnail, fetched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(source, platform_id) DO UPDATE SET
          title=excluded.title, price=excluded.price, km=excluded.km, year=excluded.year,
-         fuel=excluded.fuel, gearbox=excluded.gearbox, power_kw=excluded.power_kw,
+         fuel=excluded.fuel, gearbox=excluded.gearbox, body_type=excluded.body_type, power_kw=excluded.power_kw,
          location=excluded.location, description=excluded.description,
          thumbnail=excluded.thumbnail, fetched_at=excluded.fetched_at`,
     )
@@ -135,6 +143,7 @@ export function upsertListing(l: NormalizedListing): void {
       l.year,
       l.fuel,
       l.gearbox,
+      l.bodyType,
       l.power_kw,
       l.location,
       l.description,
@@ -169,6 +178,7 @@ function rowToListing(row: any): NormalizedListing {
     year: row.year,
     fuel: row.fuel,
     gearbox: row.gearbox,
+    bodyType: row.body_type ?? null,
     power_kw: row.power_kw,
     location: row.location,
     description: row.description,

@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import { withPage, jitter, runConcurrent, detectBlock } from './browser';
 import { getCachedListing, upsertListing } from '../db';
-import type { Fuel, Gearbox, NormalizedListing, SearchFilters } from './types';
+import type { BodyType, Fuel, Gearbox, NormalizedListing, SearchFilters } from './types';
 
 const BASE = 'https://www.kleinanzeigen.de';
 
@@ -39,6 +39,21 @@ function cleanTitle(t: string): string {
     .trim();
 }
 
+// Mapping vom Kleinanzeigen-"Fahrzeugtyp" auf unsere BodyType-Werte.
+function mapBodyType(raw: string | null): BodyType | null {
+  if (!raw) return null;
+  const s = raw.toLowerCase();
+  if (s.includes('kombi')) return 'estate';
+  if (s.includes('cabrio') || s.includes('roadster')) return 'convertible';
+  if (s.includes('suv') || s.includes('geländewagen') || s.includes('gelaendewagen') || s.includes('pickup')) return 'suv';
+  if (s.includes('limousine') || s.includes('limo')) return 'sedan';
+  if (s.includes('sportwagen') || s.includes('coupé') || s.includes('coupe')) return 'coupe';
+  if (s.includes('van') || s.includes('bus') || s.includes('kleinwagen')) {
+    return s.includes('kleinwagen') ? 'small' : 'van';
+  }
+  return 'other';
+}
+
 // Sicherheitsnetz: nur Anzeigen behalten, die wirklich zu den Filtern passen.
 function matchesFilters(l: NormalizedListing, f: SearchFilters): boolean {
   if (f.priceMin != null && l.price != null && l.price < f.priceMin) return false;
@@ -47,6 +62,8 @@ function matchesFilters(l: NormalizedListing, f: SearchFilters): boolean {
   if (f.yearMax != null && l.year != null && l.year > f.yearMax) return false;
   if (f.kmMax != null && l.km != null && l.km > f.kmMax) return false;
   if (f.fuels && f.fuels.length && l.fuel && !f.fuels.includes(l.fuel)) return false;
+  // Karosserieform: nur filtern, wenn das Inserat einen Typ angibt (sonst durchlassen).
+  if (f.bodyType && f.bodyType !== 'any' && l.bodyType && l.bodyType !== f.bodyType) return false;
   return true;
 }
 
@@ -141,6 +158,7 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
           year: getDetail('Erstzulassung'),
           fuel: getDetail('Kraftstoffart'),
           gearbox: getDetail('Getriebe'),
+          bodyType: getDetail('Fahrzeugtyp'),
           power: getDetail('Leistung'),
         };
       });
@@ -179,6 +197,7 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
         year,
         fuel,
         gearbox,
+        bodyType: mapBodyType(data.bodyType),
         power_kw,
         location: data.location || null,
         description: data.description || '',

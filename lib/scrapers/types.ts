@@ -2,6 +2,7 @@ export type Source = 'mobile' | 'kleinanzeigen';
 
 export type Fuel = 'petrol' | 'diesel' | 'hybrid' | 'electric' | 'other';
 export type Gearbox = 'manual' | 'automatic' | 'other';
+export type BodyType = 'estate' | 'sedan' | 'convertible' | 'suv' | 'small' | 'coupe' | 'van' | 'other';
 
 export interface SearchFilters {
   make?: string;
@@ -13,6 +14,7 @@ export interface SearchFilters {
   kmMax?: number;
   fuels?: Fuel[];
   gearbox?: Gearbox | 'any';
+  bodyType?: BodyType | 'any';
   zip?: string;
   radiusKm?: number;
   wish?: string;
@@ -29,6 +31,7 @@ export interface NormalizedListing {
   year: number | null;
   fuel: Fuel | null;
   gearbox: Gearbox | null;
+  bodyType: BodyType | null;
   power_kw: number | null;
   location: string | null;
   description: string;
