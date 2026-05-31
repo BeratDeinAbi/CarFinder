@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Fuel, SearchFilters } from '@/lib/scrapers/types';
+import { BRANDS, modelsForBrand } from '@/lib/carData';
 
 interface Props {
   onSubmit: (filters: SearchFilters) => void;
@@ -29,8 +30,20 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
   const [radiusKm, setRadiusKm] = useState('100');
   const [wish, setWish] = useState('alltagstauglich, zuverlässig, wenig Reparaturen');
 
+  // Modelle passend zur eingegebenen Marke (für das Modell-Datalist).
+  const models = useMemo(() => modelsForBrand(make), [make]);
+
   const toggleFuel = (f: Fuel) => {
     setFuels((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
+  };
+
+  // Beim Markenwechsel das Modell zurücksetzen, falls es nicht zur neuen Marke passt.
+  const handleMakeChange = (val: string) => {
+    setMake(val);
+    const newModels = modelsForBrand(val);
+    if (model && newModels.length && !newModels.some((m) => m.toLowerCase() === model.toLowerCase())) {
+      setModel('');
+    }
   };
 
   const submit = (e: React.FormEvent) => {
@@ -58,19 +71,57 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
 
       <div className="field">
         <label>Marke</label>
-        <input value={make} onChange={(e) => setMake(e.target.value)} placeholder="z.B. VW" />
+        <input
+          list="brand-list"
+          value={make}
+          onChange={(e) => handleMakeChange(e.target.value)}
+          placeholder="Marke tippen oder auswählen…"
+          autoComplete="off"
+        />
+        <datalist id="brand-list">
+          {BRANDS.map((b) => (
+            <option key={b} value={b} />
+          ))}
+        </datalist>
       </div>
 
       <div className="field">
         <label>Modell</label>
-        <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="z.B. Golf" />
+        <input
+          list="model-list"
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          placeholder={models.length ? 'Klicken für Modelle…' : 'z.B. Golf'}
+          autoComplete="off"
+        />
+        <datalist id="model-list">
+          {models.map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
       </div>
 
       <div className="field">
         <label>Preis (€)</label>
         <div className="row-2">
-          <input type="number" placeholder="von" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
-          <input type="number" placeholder="bis" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={100}
+            placeholder="beliebig"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+          />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={100}
+            placeholder="beliebig"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+          />
         </div>
       </div>
 
