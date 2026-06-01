@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import FilterForm from '@/components/FilterForm';
 import ResultCard from '@/components/ResultCard';
+import ThemeToggle from '@/components/ThemeToggle';
 import type { JobInfo, ScoredListing, SearchFilters } from '@/lib/scrapers/types';
 
 interface JobResponse {
@@ -80,8 +81,10 @@ export default function Page() {
           <div className="logo">🚗</div>
           <div>
             <h1>CarFinder</h1>
+            <div className="subtitle">Finde den besten Gebrauchten – KI-bewertet</div>
           </div>
         </div>
+        <ThemeToggle />
       </div>
 
       <div className="grid">

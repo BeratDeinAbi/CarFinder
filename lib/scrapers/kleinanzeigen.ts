@@ -18,17 +18,25 @@ function buildSearchUrl(f: SearchFilters, page: number): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   const priceSeg = f.priceMin || f.priceMax ? `/preis:${f.priceMin ?? ''}:${f.priceMax ?? ''}` : '';
-  const keywordSeg = slug ? `/${slug}` : '';
-  // WICHTIG: Das Location-Segment muss VOR dem Keyword stehen, sonst liefert
-  // Kleinanzeigen 0 Treffer. Reihenfolge: /s-autos/preis:.../l10115r100/<keyword>/k0c216
-  let locSeg = '';
-  if (f.zip) {
-    locSeg = `/l${f.zip}`;
-    if (f.radiusKm) locSeg += `r${f.radiusKm}`;
-  }
   const pageSeg = page > 1 ? `/seite:${page}` : '';
 
-  return `${BASE}/s-autos${priceSeg}${locSeg}${keywordSeg}${pageSeg}/k0c216`;
+  // Location-Code (l<zip>r<radius>) — Platzierung hängt davon ab, ob ein Keyword existiert.
+  let loc = '';
+  if (f.zip) {
+    loc = `l${f.zip}`;
+    if (f.radiusKm) loc += `r${f.radiusKm}`;
+  }
+
+  if (slug) {
+    // MIT Keyword: Location als eigenes Segment VOR dem Keyword, Kategorie als /k0c216.
+    // /s-autos/preis:.../l10115r100/vw-golf/k0c216
+    const locSeg = loc ? `/${loc}` : '';
+    return `${BASE}/s-autos${priceSeg}${locSeg}/${slug}${pageSeg}/k0c216`;
+  }
+
+  // OHNE Keyword: Location wird DIREKT an den Kategorie-Code c216 angehängt (ohne k0).
+  // /s-autos/preis:.../c216l10115r50   bzw.   /s-autos/preis:.../c216
+  return `${BASE}/s-autos${priceSeg}${pageSeg}/c216${loc}`;
 }
 
 // "Reserviert • Gelöscht • …" sind Boilerplate-Badges im Detail-Titel. Entfernen.

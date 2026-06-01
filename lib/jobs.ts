@@ -62,12 +62,22 @@ async function runJob(jobId: string, filters: SearchFilters): Promise<void> {
   }
 
   for (const l of all) linkJobListing(jobId, l.id);
-  updateJob(jobId, { status: 'ranking', totalFound: all.length });
+
+  // Nicht alle Treffer von Gemini bewerten lassen: Bei breiten Suchen (z.B. nur
+  // Preis, ohne Marke) kommen leicht 50+ Anzeigen, was das kostenlose Gemini-
+  // Tageslimit sprengt und ewig dauert. Wir ranken die günstigsten RANK_LIMIT
+  // Anzeigen (bestes Preis-Leistungs-Potenzial). Der Rest bleibt sichtbar (ohne Score).
+  const RANK_LIMIT = 25;
+  const toRank = [...all]
+    .sort((a, b) => (a.price ?? Number.MAX_SAFE_INTEGER) - (b.price ?? Number.MAX_SAFE_INTEGER))
+    .slice(0, RANK_LIMIT);
+
+  updateJob(jobId, { status: 'ranking', totalFound: toRank.length });
 
   // Rank with Gemini (concurrency 1 — vermeidet Bursts, die das Gratis-Minutenlimit reißen)
   let scored = 0;
   await runConcurrent(
-    all,
+    toRank,
     1,
     async (listing) => {
       try {
@@ -80,7 +90,7 @@ async function runJob(jobId: string, filters: SearchFilters): Promise<void> {
     },
   );
 
-  updateJob(jobId, { status: 'done', totalScored: scored });
+  updateJob(jobId, { status: 'done', totalScored: scored, totalFound: all.length });
   // Best-effort: free the browser when we're idle
   setTimeout(() => closeBrowser().catch(() => {}), 10_000);
 }

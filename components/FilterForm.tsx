@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { BodyType, Fuel, SearchFilters } from '@/lib/scrapers/types';
 import { BRANDS, modelsForBrand } from '@/lib/carData';
+import Combobox from './Combobox';
 
 const BODY_TYPES: { value: BodyType | 'any'; label: string }[] = [
   { value: 'any', label: 'Egal' },
@@ -32,7 +33,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
   const [model, setModel] = useState('Golf');
   const [priceMin, setPriceMin] = useState('5000');
   const [priceMax, setPriceMax] = useState('15000');
-  const [yearMin, setYearMin] = useState('2015');
+  const [yearMin, setYearMin] = useState('');
   const [yearMax, setYearMax] = useState('');
   const [kmMax, setKmMax] = useState('150000');
   const [fuels, setFuels] = useState<Fuel[]>([]);
@@ -84,34 +85,24 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
 
       <div className="field">
         <label>Marke</label>
-        <input
-          list="brand-list"
+        <Combobox
           value={make}
-          onChange={(e) => handleMakeChange(e.target.value)}
-          placeholder="Marke tippen oder auswählen…"
-          autoComplete="off"
+          onChange={handleMakeChange}
+          options={BRANDS}
+          placeholder="Beliebig — tippen oder wählen…"
+          anyLabel="Beliebig (alle Marken)"
         />
-        <datalist id="brand-list">
-          {BRANDS.map((b) => (
-            <option key={b} value={b} />
-          ))}
-        </datalist>
       </div>
 
       <div className="field">
         <label>Modell</label>
-        <input
-          list="model-list"
+        <Combobox
           value={model}
-          onChange={(e) => setModel(e.target.value)}
-          placeholder={models.length ? 'Klicken für Modelle…' : 'z.B. Golf'}
-          autoComplete="off"
+          onChange={setModel}
+          options={models}
+          placeholder={make ? 'Beliebig — Modell wählen…' : 'Erst Marke wählen'}
+          anyLabel="Beliebig (alle Modelle)"
         />
-        <datalist id="model-list">
-          {models.map((m) => (
-            <option key={m} value={m} />
-          ))}
-        </datalist>
       </div>
 
       <div className="field">
@@ -141,14 +132,14 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
       <div className="field">
         <label>Baujahr</label>
         <div className="row-2">
-          <input type="number" placeholder="von" value={yearMin} onChange={(e) => setYearMin(e.target.value)} />
-          <input type="number" placeholder="bis" value={yearMax} onChange={(e) => setYearMax(e.target.value)} />
+          <input type="number" inputMode="numeric" placeholder="beliebig" value={yearMin} onChange={(e) => setYearMin(e.target.value)} />
+          <input type="number" inputMode="numeric" placeholder="beliebig" value={yearMax} onChange={(e) => setYearMax(e.target.value)} />
         </div>
       </div>
 
       <div className="field">
         <label>Max. km</label>
-        <input type="number" value={kmMax} onChange={(e) => setKmMax(e.target.value)} />
+        <input type="number" inputMode="numeric" step={5000} placeholder="beliebig" value={kmMax} onChange={(e) => setKmMax(e.target.value)} />
       </div>
 
       <div className="field">
