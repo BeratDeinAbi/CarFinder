@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Car, Smartphone, PanelLeftClose, PanelLeftOpen, Minus, Plus } from 'lucide-react';
 import FilterForm from '@/components/FilterForm';
 import ResultCard from '@/components/ResultCard';
 import ThemeToggle from '@/components/ThemeToggle';
 import type { JobInfo, ScoredListing, SearchDomain, SearchFilters } from '@/lib/scrapers/types';
 
-const NAV_ITEMS: { value: SearchDomain; label: string; icon: string }[] = [
-  { value: 'cars', label: 'Autos', icon: '🚗' },
-  { value: 'electronics', label: 'Elektrogeräte', icon: '📱' },
+const NAV_ITEMS: { value: SearchDomain; label: string; Icon: typeof Car }[] = [
+  { value: 'cars', label: 'Autos', Icon: Car },
+  { value: 'electronics', label: 'Elektrogeräte', Icon: Smartphone },
 ];
 
 interface JobResponse {
@@ -113,7 +114,7 @@ export default function Page() {
             aria-label={railCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
             title={railCollapsed ? 'Ausklappen' : 'Einklappen'}
           >
-            {railCollapsed ? '»' : '«'}
+            {railCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           </button>
         </div>
 
@@ -121,6 +122,7 @@ export default function Page() {
         <div className="rail-nav">
           {NAV_ITEMS.map((item) => {
             const active = domain === item.value;
+            const { Icon } = item;
             return (
               <button
                 key={item.value}
@@ -130,9 +132,11 @@ export default function Page() {
                 disabled={!!isRunning}
                 title={item.label}
               >
-                <span className="rail-icon" aria-hidden>{item.icon}</span>
+                <span className="rail-icon" aria-hidden><Icon size={19} strokeWidth={1.7} /></span>
                 <span className="rail-label">{item.label}</span>
-                <span className="rail-caret" aria-hidden>{active && filterOpen ? '−' : '+'}</span>
+                <span className="rail-caret" aria-hidden>
+                  {active && filterOpen ? <Minus size={16} /> : <Plus size={16} />}
+                </span>
               </button>
             );
           })}
@@ -146,7 +150,9 @@ export default function Page() {
       {/* Zweites Panel: Filter für den gewählten Bereich (aufklappbar) */}
       <aside className="filter-panel">
         <div className="filter-panel-head">
-          <span className="filter-panel-icon" aria-hidden>{activeNav.icon}</span>
+          <span className="filter-panel-icon" aria-hidden>
+            <activeNav.Icon size={22} strokeWidth={1.7} />
+          </span>
           <div>
             <h2>{activeNav.label}</h2>
             <p>Filter einstellen</p>

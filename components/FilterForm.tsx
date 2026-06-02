@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Car, Wallet, SlidersHorizontal, Package, MapPin } from 'lucide-react';
 import type { BodyType, ElectronicsCategory, ElectronicsCondition, Fuel, SearchDomain, SearchFilters } from '@/lib/scrapers/types';
 import { BRANDS, modelsForBrand } from '@/lib/carData';
 import {
@@ -153,7 +154,7 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
       {domain === 'cars' ? (
         <>
           <div className="filter-section">
-            <div className="filter-section-title"><span className="fs-icon" aria-hidden>🚙</span>Fahrzeug</div>
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><Car size={14} strokeWidth={1.8} /></span>Fahrzeug</div>
             <div className="field">
               <label>Marke</label>
               <Combobox
@@ -177,7 +178,7 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
           </div>
 
           <div className="filter-section">
-            <div className="filter-section-title"><span className="fs-icon" aria-hidden>💶</span>Preis &amp; Eckdaten</div>
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><Wallet size={14} strokeWidth={1.8} /></span>Preis &amp; Eckdaten</div>
             <div className="field">
               <label>Preis (€)</label>
               <div className="row-2">
@@ -199,7 +200,7 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
           </div>
 
           <div className="filter-section">
-            <div className="filter-section-title"><span className="fs-icon" aria-hidden>⚙️</span>Ausstattung</div>
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><SlidersHorizontal size={14} strokeWidth={1.8} /></span>Ausstattung</div>
             <div className="field">
               <label>Kraftstoff</label>
               <div className="checkbox-group">
@@ -234,7 +235,7 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
       ) : (
         <>
           <div className="filter-section">
-            <div className="filter-section-title"><span className="fs-icon" aria-hidden>📦</span>Gerät</div>
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><Package size={14} strokeWidth={1.8} /></span>Gerät</div>
             <div className="field">
               <label>Kategorie</label>
               <select value={electronicsCategory} onChange={(e) => handleElectronicsCategoryChange(e.target.value as ElectronicsCategory)}>
@@ -272,7 +273,7 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
           </div>
 
           <div className="filter-section">
-            <div className="filter-section-title"><span className="fs-icon" aria-hidden>💶</span>Preis &amp; Zustand</div>
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><Wallet size={14} strokeWidth={1.8} /></span>Preis &amp; Zustand</div>
             <div className="field">
               <label>Preis (€)</label>
               <div className="row-2">
@@ -295,7 +296,7 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
       )}
 
       <div className="filter-section">
-        <div className="filter-section-title"><span className="fs-icon" aria-hidden>📍</span>Ort &amp; Wunsch</div>
+        <div className="filter-section-title"><span className="fs-icon" aria-hidden><MapPin size={14} strokeWidth={1.8} /></span>Ort &amp; Wunsch</div>
         <div className="field">
           <label>PLZ + Umkreis (km)</label>
           <div className="row-2">

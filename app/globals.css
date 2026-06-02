@@ -1,33 +1,37 @@
 /* ============ Design Tokens ============ */
 :root {
-  /* Light theme — helle Frosted-Glass-Optik wie Vorlage (kühles, neutrales Grau) */
-  --bg: #c4c7cd;
-  --bg-grad-1: #d4d7dd;
-  --bg-grad-2: #bcbfc6;
-  --panel: rgba(252, 252, 253, 0.55);
+  /* Light theme — Frosted-Glass nach Claude-Design-Vorlage (milchiges Glas, kühleres Grau) */
+  --bg: #aeb2bb;
+  --bg-grad-1: #c2c6cd;
+  --bg-grad-2: #a3a7b0;
+  --panel: rgba(255, 255, 255, 0.72);
   --panel-solid: #ffffff;
-  --panel-2: rgba(255, 255, 255, 0.45);
-  --panel-3: rgba(248, 249, 251, 0.7);
-  --glass-blur: 26px;
-  --border: rgba(255, 255, 255, 0.85);
-  --border-strong: rgba(20, 24, 31, 0.1);
-  --text: #1a1d23;
-  --muted: #71757d;
-  --accent: #16181d;
-  --accent-2: #34373d;
-  --accent-soft: rgba(22, 24, 29, 0.055);
+  --panel-2: rgba(255, 255, 255, 0.5);
+  --panel-3: rgba(248, 249, 251, 0.72);
+  --panel-edge: rgba(255, 255, 255, 0.95);
+  --glass-blur: 24px;
+  --border: var(--panel-edge);
+  --border-strong: rgba(20, 24, 31, 0.085);
+  --text: #1b1d22;
+  --muted: #82868e;
+  --muted-soft: #a7abb2;
+  --icon: #44474e;
+  --accent: #1b1d22;
+  --accent-2: #2a2d33;
+  --accent-soft: rgba(20, 24, 31, 0.05);
   --accent-contrast: #ffffff;
+  --accent-dot: #ef5fa0;
   --good: #16a34a;
   --good-soft: rgba(22, 163, 74, 0.1);
   --warn: #d97706;
   --warn-soft: rgba(217, 119, 6, 0.1);
   --bad: #dc2626;
   --bad-soft: rgba(220, 38, 38, 0.08);
-  --shadow-sm: 0 1px 2px rgba(15, 23, 41, 0.06), 0 1px 3px rgba(15, 23, 41, 0.07);
-  --shadow-md: 0 10px 30px rgba(15, 23, 41, 0.12), 0 2px 8px rgba(15, 23, 41, 0.06);
-  --shadow-lg: 0 24px 60px rgba(15, 23, 41, 0.18), 0 8px 18px rgba(15, 23, 41, 0.1);
-  --radius: 26px;
-  --radius-sm: 13px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 41, 0.06), 0 6px 16px rgba(15, 23, 41, 0.1);
+  --shadow-md: 0 26px 60px rgba(20, 26, 40, 0.16), 0 6px 18px rgba(20, 26, 40, 0.08);
+  --shadow-lg: 0 26px 60px rgba(20, 26, 40, 0.2), 0 8px 20px rgba(20, 26, 40, 0.12);
+  --radius: 30px;
+  --radius-sm: 14px;
 }
 
 :root[data-theme='dark'] {
@@ -67,18 +71,19 @@ body {
   margin: 0;
   padding: 0;
   background: var(--bg);
-  /* Mehrere weiche Lichtflecken -> der Glas-Blur der Panels wird sichtbar */
+  /* Lichtflecken exakt nach Design-Vorlage -> Glas-Blur der Panels wird sichtbar */
   background-image:
-    radial-gradient(900px 500px at 12% 8%, var(--bg-grad-1), transparent 60%),
-    radial-gradient(800px 600px at 88% 18%, var(--bg-grad-2), transparent 55%),
-    radial-gradient(700px 500px at 70% 95%, var(--bg-grad-1), transparent 60%),
-    radial-gradient(600px 400px at 25% 80%, rgba(255, 255, 255, 0.4), transparent 55%);
+    radial-gradient(1100px 620px at 14% 6%, var(--bg-grad-1), transparent 60%),
+    radial-gradient(900px 680px at 90% 16%, var(--bg-grad-2), transparent 58%),
+    radial-gradient(820px 560px at 72% 96%, var(--bg-grad-1), transparent 60%),
+    radial-gradient(680px 460px at 22% 86%, rgba(255, 255, 255, 0.45), transparent 55%);
   background-attachment: fixed;
   color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -111,16 +116,17 @@ a {
   grid-template-columns: 76px 0 1fr;
 }
 
-/* Gemeinsame Glas-Optik für alle drei Panels — volle Höhe bis ganz nach unten */
+/* Gemeinsame Glas-Optik für alle drei Panels — milchiges Frosted Glass wie Vorlage */
 .rail,
 .filter-panel,
 .content {
   background: var(--panel);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  border: 1px solid var(--border);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 38%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(155%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(155%);
+  border: 1px solid var(--panel-edge);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   height: 100%;
   min-height: 0;
 }
@@ -244,18 +250,27 @@ a {
 }
 
 .rail-icon {
-  font-size: 17px;
-  line-height: 1;
   flex-shrink: 0;
   width: 22px;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  color: var(--icon);
+}
+
+.rail-item.active .rail-icon {
+  color: var(--accent-contrast);
 }
 
 .rail-caret {
   margin-left: auto;
-  font-size: 16px;
-  font-weight: 600;
-  opacity: 0.7;
+  display: grid;
+  place-items: center;
+  color: var(--muted-soft);
+  opacity: 0.85;
+}
+
+.rail-item.active .rail-caret {
+  color: var(--accent-contrast);
 }
 
 .rail-footer {
@@ -323,7 +338,6 @@ a {
 }
 
 .filter-panel-icon {
-  font-size: 22px;
   width: 42px;
   height: 42px;
   display: flex;
@@ -331,8 +345,9 @@ a {
   justify-content: center;
   background: var(--panel-2);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  border-radius: 13px;
   flex-shrink: 0;
+  color: var(--icon);
 }
 
 .filter-panel-head h2 {
@@ -389,7 +404,7 @@ a {
 .filter-section {
   margin-bottom: 18px;
   padding-bottom: 18px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .filter-section:last-of-type {
@@ -411,7 +426,9 @@ a {
 }
 
 .filter-section-title .fs-icon {
-  font-size: 13px;
+  display: grid;
+  place-items: center;
+  color: var(--icon);
 }
 
 /* Letztes Feld im Abschnitt ohne Abstand nach unten (Trennlinie übernimmt das). */
@@ -561,7 +578,7 @@ a {
 .combo-any {
   color: var(--muted);
   font-weight: 600;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
   border-radius: 8px 8px 0 0;
   margin-bottom: 4px;
 }
@@ -723,7 +740,7 @@ a {
   align-items: center;
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-strong);
 }
 
 .card .source {
