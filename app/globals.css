@@ -1,58 +1,61 @@
 /* ============ Design Tokens ============ */
 :root {
-  /* Light theme (Default) */
-  --bg: #f6f8fb;
-  --bg-grad-1: #e8f3f1;
-  --bg-grad-2: #eef1fa;
-  --panel: #ffffff;
-  --panel-2: #f1f4f8;
-  --panel-3: #e9edf3;
-  --border: #e4e8ef;
-  --border-strong: #d2d8e2;
-  --text: #0f1729;
-  --muted: #64748b;
-  --accent: #0ea5a4;
-  --accent-2: #2563eb;
-  --accent-soft: #e3f5f4;
+  /* Light theme — helle Glas-Optik (frosted glass) wie Vorlage */
+  --bg: #d8dadf;
+  --bg-grad-1: #e7e9ee;
+  --bg-grad-2: #dfe2e8;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-solid: #ffffff;
+  --panel-2: rgba(255, 255, 255, 0.55);
+  --panel-3: rgba(245, 246, 249, 0.85);
+  --glass-blur: 18px;
+  --border: rgba(255, 255, 255, 0.7);
+  --border-strong: rgba(15, 23, 41, 0.12);
+  --text: #16181d;
+  --muted: #6b7280;
+  --accent: #16181d;
+  --accent-2: #3a3d44;
+  --accent-soft: rgba(22, 24, 29, 0.06);
   --accent-contrast: #ffffff;
-  --good: #10b981;
-  --good-soft: #e7f8f1;
-  --warn: #f59e0b;
-  --warn-soft: #fef5e7;
-  --bad: #ef4444;
-  --bad-soft: #fdecec;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 41, 0.04), 0 1px 3px rgba(15, 23, 41, 0.06);
-  --shadow-md: 0 4px 14px rgba(15, 23, 41, 0.07), 0 2px 5px rgba(15, 23, 41, 0.04);
-  --shadow-lg: 0 16px 40px rgba(14, 165, 164, 0.14), 0 6px 12px rgba(15, 23, 41, 0.07);
-  --radius: 18px;
-  --radius-sm: 11px;
+  --good: #16a34a;
+  --good-soft: rgba(22, 163, 74, 0.1);
+  --warn: #d97706;
+  --warn-soft: rgba(217, 119, 6, 0.1);
+  --bad: #dc2626;
+  --bad-soft: rgba(220, 38, 38, 0.08);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 41, 0.05), 0 1px 3px rgba(15, 23, 41, 0.06);
+  --shadow-md: 0 8px 24px rgba(15, 23, 41, 0.1), 0 2px 6px rgba(15, 23, 41, 0.05);
+  --shadow-lg: 0 20px 50px rgba(15, 23, 41, 0.16), 0 8px 16px rgba(15, 23, 41, 0.08);
+  --radius: 22px;
+  --radius-sm: 13px;
 }
 
 :root[data-theme='dark'] {
-  /* Monochromes, dunkles Schema (wie Efferd-Vorlage): fast-schwarz + Graustufen */
-  --bg: #0a0a0a;
-  --bg-grad-1: transparent;
-  --bg-grad-2: transparent;
-  --panel: #141414;
-  --panel-2: #1c1c1c;
-  --panel-3: #262626;
-  --border: #262626;
-  --border-strong: #383838;
-  --text: #f5f5f5;
-  --muted: #8a8a8a;
-  --accent: #f5f5f5;
-  --accent-2: #d4d4d4;
-  --accent-soft: #262626;
-  --accent-contrast: #0a0a0a;
+  /* Dunkle Glas-Variante */
+  --bg: #121316;
+  --bg-grad-1: #1a1c20;
+  --bg-grad-2: #15171a;
+  --panel: rgba(34, 36, 41, 0.72);
+  --panel-solid: #1c1e22;
+  --panel-2: rgba(44, 47, 53, 0.55);
+  --panel-3: rgba(40, 43, 49, 0.85);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f3f4f6;
+  --muted: #9ca3af;
+  --accent: #f3f4f6;
+  --accent-2: #d4d4d8;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --accent-contrast: #16181d;
   --good: #4ade80;
-  --good-soft: #14241a;
+  --good-soft: rgba(74, 222, 128, 0.12);
   --warn: #fbbf24;
-  --warn-soft: #2a2410;
+  --warn-soft: rgba(251, 191, 36, 0.12);
   --bad: #f87171;
-  --bad-soft: #2a1717;
+  --bad-soft: rgba(248, 113, 113, 0.12);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -80,20 +83,43 @@ a {
   text-decoration: none;
 }
 
-/* ============ App-Shell (3 Spalten: Rail + Filter-Panel + Content) ============ */
+/* ============ App-Shell — schwebende Glas-Panels (wie Vorlage) ============ */
 .app-shell {
   display: grid;
-  grid-template-columns: 232px 320px 1fr;
+  grid-template-columns: 248px 340px 1fr;
+  gap: 16px;
+  padding: 16px;
   min-height: 100vh;
+  align-items: start;
+  transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (max-width: 1000px) {
-  .app-shell {
-    grid-template-columns: 200px 1fr;
-  }
-  .filter-panel {
-    grid-column: 1 / -1;
-  }
+/* Rail eingeklappt: schmale Icon-Leiste */
+.app-shell.rail-is-collapsed {
+  grid-template-columns: 76px 340px 1fr;
+}
+
+/* Filter-Panel zugeklappt: Spalte verschwindet */
+.app-shell:not(.filter-is-open) {
+  grid-template-columns: 248px 0 1fr;
+}
+.app-shell.rail-is-collapsed:not(.filter-is-open) {
+  grid-template-columns: 76px 0 1fr;
+}
+
+/* Gemeinsame Glas-Optik für alle drei Panels */
+.rail,
+.filter-panel,
+.content {
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
 }
 
 /* ---- Linke Navigationsleiste (Rail) ---- */
@@ -101,21 +127,30 @@ a {
   display: flex;
   flex-direction: column;
   padding: 16px 12px;
-  border-right: 1px solid var(--border);
-  background: var(--bg);
+  overflow: hidden;
+}
+
+.rail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .rail-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px 18px;
+  min-width: 0;
 }
 
 .rail .logo {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-contrast);
   display: flex;
@@ -126,52 +161,78 @@ a {
   flex-shrink: 0;
 }
 
-.rail-brand-name {
+.rail-brand .rail-label {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.rail-toggle {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rail-toggle:hover {
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .rail-section-label {
   font-size: 11px;
   font-weight: 600;
   color: var(--muted);
-  padding: 8px 10px 6px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .rail-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .rail-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 9px 10px;
+  padding: 11px 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 12px;
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
 }
 
 .rail-item:hover:not(:disabled) {
-  background: var(--panel-2);
+  background: var(--accent-soft);
   color: var(--text);
 }
 
+/* Aktiver Eintrag: dunkle "Pille" wie in der Vorlage (Threads) */
 .rail-item.active {
-  background: var(--panel-2);
-  color: var(--text);
+  background: var(--accent);
+  color: var(--accent-contrast);
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .rail-item:disabled {
@@ -180,22 +241,46 @@ a {
 }
 
 .rail-icon {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+}
+
+.rail-caret {
+  margin-left: auto;
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.7;
 }
 
 .rail-footer {
   margin-top: auto;
-  padding: 8px;
+  padding: 8px 6px 0;
+}
+
+/* Eingeklappt: Labels & Carets ausblenden, Rail zentrieren */
+.rail-is-collapsed .rail-label,
+.rail-is-collapsed .rail-caret,
+.rail-is-collapsed .rail-section-label {
+  display: none;
+}
+.rail-is-collapsed .rail-top {
+  justify-content: center;
+}
+.rail-is-collapsed .rail-item {
+  justify-content: center;
+  padding: 11px 0;
 }
 
 /* Theme toggle button */
 .theme-toggle {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
-  background: var(--panel);
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-2);
   color: var(--text);
   font-size: 17px;
   cursor: pointer;
@@ -206,19 +291,23 @@ a {
 }
 
 .theme-toggle:hover {
-  border-color: var(--border-strong);
-  background: var(--panel-2);
+  background: var(--accent-soft);
 }
 
-/* ---- Zweites Panel: Filter ---- */
+/* ---- Zweites Panel: Filter (aufklappbar) ---- */
 .filter-panel {
-  border-right: 1px solid var(--border);
-  background: var(--panel);
   padding: 20px 18px;
   overflow-y: auto;
-  max-height: 100vh;
-  position: sticky;
-  top: 0;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.app-shell:not(.filter-is-open) .filter-panel {
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .filter-panel-head {
@@ -227,19 +316,19 @@ a {
   gap: 12px;
   padding-bottom: 16px;
   margin-bottom: 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .filter-panel-icon {
   font-size: 22px;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
   flex-shrink: 0;
 }
 
@@ -260,10 +349,11 @@ a {
   display: block;
 }
 
-/* ---- Hauptbereich: Ergebnisse (volle Breite) ---- */
+/* ---- Hauptbereich: Ergebnisse ---- */
 .content {
-  padding: 24px 28px 64px;
+  padding: 24px 28px 32px;
   min-width: 0;
+  overflow-y: auto;
 }
 
 .content-head {
@@ -344,7 +434,7 @@ a {
 .field textarea {
   width: 100%;
   background: var(--panel-2);
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--border-strong);
   color: var(--text);
   padding: 11px 13px;
   border-radius: var(--radius-sm);
@@ -397,7 +487,7 @@ a {
 .combo-input {
   width: 100%;
   background: var(--panel-2);
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--border-strong);
   color: var(--text);
   padding: 11px 34px 11px 13px;
   border-radius: var(--radius-sm);
@@ -438,7 +528,9 @@ a {
   list-style: none;
   max-height: 260px;
   overflow-y: auto;
-  background: var(--panel);
+  background: var(--panel-solid);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-lg);
@@ -557,9 +649,9 @@ a {
 }
 
 .card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--panel-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -570,7 +662,7 @@ a {
 .card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--accent);
+  border-color: var(--border-strong);
 }
 
 .card .thumb {

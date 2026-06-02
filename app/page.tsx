@@ -29,6 +29,8 @@ export default function Page() {
   const [data, setData] = useState<JobResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [domain, setDomain] = useState<SearchDomain>('cars');
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startSearch = async (filters: SearchFilters) => {
@@ -84,29 +86,56 @@ export default function Page() {
 
   const activeNav = NAV_ITEMS.find((n) => n.value === domain)!;
 
+  // Klick auf eine Kategorie: Bereich setzen und Filter-Panel aufklappen.
+  // Erneuter Klick auf die bereits aktive Kategorie klappt das Panel zu/auf.
+  const handleNavClick = (value: SearchDomain) => {
+    if (value === domain) {
+      setFilterOpen((open) => !open);
+    } else {
+      setDomain(value);
+      setFilterOpen(true);
+    }
+  };
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${railCollapsed ? 'rail-is-collapsed' : ''} ${filterOpen ? 'filter-is-open' : ''}`}>
       {/* Schmale Navigationsleiste mit den Kategorien */}
       <nav className="rail">
-        <div className="rail-brand">
-          <div className="logo">AF</div>
-          <span className="rail-brand-name">AnzeigenFinder</span>
+        <div className="rail-top">
+          <div className="rail-brand">
+            <div className="logo">AF</div>
+            <span className="rail-label">AnzeigenFinder</span>
+          </div>
+          <button
+            type="button"
+            className="rail-toggle"
+            onClick={() => setRailCollapsed((c) => !c)}
+            aria-label={railCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+            title={railCollapsed ? 'Ausklappen' : 'Einklappen'}
+          >
+            {railCollapsed ? '»' : '«'}
+          </button>
         </div>
 
-        <div className="rail-section-label">Suchbereich</div>
+        <div className="rail-section-label"><span className="rail-label">Suchbereich</span></div>
         <div className="rail-nav">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              className={`rail-item ${domain === item.value ? 'active' : ''}`}
-              onClick={() => setDomain(item.value)}
-              disabled={!!isRunning}
-            >
-              <span className="rail-icon" aria-hidden>{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const active = domain === item.value;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                className={`rail-item ${active ? 'active' : ''}`}
+                onClick={() => handleNavClick(item.value)}
+                disabled={!!isRunning}
+                title={item.label}
+              >
+                <span className="rail-icon" aria-hidden>{item.icon}</span>
+                <span className="rail-label">{item.label}</span>
+                <span className="rail-caret" aria-hidden>{active && filterOpen ? '−' : '+'}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="rail-footer">
@@ -114,7 +143,7 @@ export default function Page() {
         </div>
       </nav>
 
-      {/* Zweites Panel: Filter für den gewählten Bereich */}
+      {/* Zweites Panel: Filter für den gewählten Bereich (aufklappbar) */}
       <aside className="filter-panel">
         <div className="filter-panel-head">
           <span className="filter-panel-icon" aria-hidden>{activeNav.icon}</span>
