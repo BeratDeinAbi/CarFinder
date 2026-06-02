@@ -13,11 +13,8 @@ export default function ThemeToggle() {
   useEffect(() => {
     setMounted(true);
     const stored = (localStorage.getItem('theme') as Theme | null) ?? null;
-    const prefersDark =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initial: Theme = stored ?? (prefersDark ? 'dark' : 'light');
+    // Standard ist Dark (monochromes Layout); ohne gespeicherte Wahl -> dark.
+    const initial: Theme = stored ?? 'dark';
     setTheme(initial);
     document.documentElement.setAttribute('data-theme', initial);
   }, []);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BodyType, ElectronicsCategory, ElectronicsCondition, Fuel, SearchDomain, SearchFilters } from '@/lib/scrapers/types';
 import { BRANDS, modelsForBrand } from '@/lib/carData';
 import {
@@ -26,6 +26,8 @@ const BODY_TYPES: { value: BodyType | 'any'; label: string }[] = [
 interface Props {
   onSubmit: (filters: SearchFilters) => void;
   disabled?: boolean;
+  /** Aktiver Suchbereich – wird von der linken Navigationsleiste gesteuert. */
+  domain: SearchDomain;
 }
 
 const FUELS: { value: Fuel; label: string }[] = [
@@ -35,8 +37,7 @@ const FUELS: { value: Fuel; label: string }[] = [
   { value: 'electric', label: 'Elektro' },
 ];
 
-export default function FilterForm({ onSubmit, disabled }: Props) {
-  const [domain, setDomain] = useState<SearchDomain>('cars');
+export default function FilterForm({ onSubmit, disabled, domain }: Props) {
   const [make, setMake] = useState('VW');
   const [model, setModel] = useState('Golf');
   const [electronicsCategory, setElectronicsCategory] = useState<ElectronicsCategory>('phone');
@@ -76,9 +77,12 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
     }
   };
 
-  const handleDomainChange = (nextDomain: SearchDomain) => {
-    setDomain(nextDomain);
-    if (nextDomain === 'cars') {
+  // Wenn die Navigationsleiste den Suchbereich wechselt, sinnvolle Defaults setzen.
+  const prevDomain = useRef(domain);
+  useEffect(() => {
+    if (prevDomain.current === domain) return;
+    prevDomain.current = domain;
+    if (domain === 'cars') {
       setPriceMin('5000');
       setPriceMax('15000');
       setWish('alltagstauglich, zuverlässig, wenig Reparaturen');
@@ -87,7 +91,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
       setPriceMax('800');
       setWish('guter Zustand, fairer Preis, kein versteckter Defekt');
     }
-  };
+  }, [domain]);
 
   const handleElectronicsCategoryChange = (val: ElectronicsCategory) => {
     setElectronicsCategory(val);
@@ -145,30 +149,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
   };
 
   return (
-    <form className="panel" onSubmit={submit}>
-      <h2>Filter</h2>
-
-      <div className="domain-switch" role="group" aria-label="Suchbereich">
-        <button
-          type="button"
-          className={domain === 'cars' ? 'active' : ''}
-          onClick={() => handleDomainChange('cars')}
-          disabled={disabled}
-        >
-          <span className="ds-icon" aria-hidden>🚗</span>
-          Autos
-        </button>
-        <button
-          type="button"
-          className={domain === 'electronics' ? 'active' : ''}
-          onClick={() => handleDomainChange('electronics')}
-          disabled={disabled}
-        >
-          <span className="ds-icon" aria-hidden>📱</span>
-          Elektrogeräte
-        </button>
-      </div>
-
+    <form className="filter-form" onSubmit={submit}>
       {domain === 'cars' ? (
         <>
           <div className="filter-section">

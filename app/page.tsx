@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import FilterForm from '@/components/FilterForm';
 import ResultCard from '@/components/ResultCard';
 import ThemeToggle from '@/components/ThemeToggle';
-import type { JobInfo, ScoredListing, SearchFilters } from '@/lib/scrapers/types';
+import type { JobInfo, ScoredListing, SearchDomain, SearchFilters } from '@/lib/scrapers/types';
+
+const NAV_ITEMS: { value: SearchDomain; label: string; icon: string }[] = [
+  { value: 'cars', label: 'Autos', icon: '🚗' },
+  { value: 'electronics', label: 'Elektrogeräte', icon: '📱' },
+];
 
 interface JobResponse {
   job: JobInfo;
@@ -23,6 +28,7 @@ export default function Page() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [data, setData] = useState<JobResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [domain, setDomain] = useState<SearchDomain>('cars');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startSearch = async (filters: SearchFilters) => {
@@ -76,69 +82,99 @@ export default function Page() {
   const activeDomain = job?.filters.domain ?? 'cars';
   const resultTypeLabel = activeDomain === 'electronics' ? 'Elektrogeräte' : 'Autos';
 
+  const activeNav = NAV_ITEMS.find((n) => n.value === domain)!;
+
   return (
-    <div className="container">
-      <div className="header">
-        <div className="brand">
+    <div className="app-shell">
+      {/* Schmale Navigationsleiste mit den Kategorien */}
+      <nav className="rail">
+        <div className="rail-brand">
           <div className="logo">AF</div>
+          <span className="rail-brand-name">AnzeigenFinder</span>
+        </div>
+
+        <div className="rail-section-label">Suchbereich</div>
+        <div className="rail-nav">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              className={`rail-item ${domain === item.value ? 'active' : ''}`}
+              onClick={() => setDomain(item.value)}
+              disabled={!!isRunning}
+            >
+              <span className="rail-icon" aria-hidden>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="rail-footer">
+          <ThemeToggle />
+        </div>
+      </nav>
+
+      {/* Zweites Panel: Filter für den gewählten Bereich */}
+      <aside className="filter-panel">
+        <div className="filter-panel-head">
+          <span className="filter-panel-icon" aria-hidden>{activeNav.icon}</span>
           <div>
-            <h1>AnzeigenFinder</h1>
-            <div className="subtitle">Finde gute Autos und Elektrogeräte – KI-bewertet</div>
+            <h2>{activeNav.label}</h2>
+            <p>Filter einstellen</p>
           </div>
         </div>
-        <ThemeToggle />
-      </div>
+        <FilterForm onSubmit={startSearch} disabled={!!isRunning} domain={domain} />
+      </aside>
 
-      <div className="grid">
-        <div>
-          <FilterForm onSubmit={startSearch} disabled={!!isRunning} />
-        </div>
-
-        <div>
-          {error && <div className="error-banner">{error}</div>}
-
+      {/* Hauptbereich: Ergebnisse über die volle Breite */}
+      <main className="content">
+        <div className="content-head">
+          <h1>{activeNav.label} finden</h1>
           {job && (
-            <div className="status">
-              <div>
-                <strong>{STATUS_LABEL[job.status] || job.status}</strong>
-                {' · '}
-                {job.totalFound} Anzeigen gefunden
-                {job.status === 'ranking' && ` · ${job.totalScored} von ${job.totalFound} bewertet`}
-              </div>
-              {job.errors.length > 0 && (
-                <div style={{ marginTop: 6, fontSize: 12 }}>
-                  {job.errors.slice(-3).map((e, i) => (
-                    <div key={i}>⚠ {e}</div>
-                  ))}
-                </div>
-              )}
-              {job.status === 'ranking' && (
-                <div className="progress-bar">
-                  <div style={{ width: `${scoreProgress}%` }} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {!job && !error && (
-            <div className="empty">
-              Suchbereich wählen, Filter ausfüllen und die Suche starten. Die Bewertung dauert je nach Trefferzahl 1-3 Minuten.
-            </div>
-          )}
-
-          {listings.length > 0 && (
-            <div className="results">
-              {listings.map((l) => (
-                <ResultCard key={l.id} listing={l} />
-              ))}
-            </div>
-          )}
-
-          {job?.status === 'done' && listings.length === 0 && (
-            <div className="empty">Keine {resultTypeLabel} für deine Filter gefunden — versuche eine breitere Suche.</div>
+            <span className="content-count">
+              {STATUS_LABEL[job.status] || job.status}
+              {' · '}
+              {job.totalFound} gefunden
+              {job.status === 'ranking' && ` · ${job.totalScored}/${job.totalFound} bewertet`}
+            </span>
           )}
         </div>
-      </div>
+
+        {error && <div className="error-banner">{error}</div>}
+
+        {job?.status === 'ranking' && (
+          <div className="progress-bar">
+            <div style={{ width: `${scoreProgress}%` }} />
+          </div>
+        )}
+
+        {job && job.errors.length > 0 && (
+          <div className="job-errors">
+            {job.errors.slice(-3).map((e, i) => (
+              <div key={i}>⚠ {e}</div>
+            ))}
+          </div>
+        )}
+
+        {!job && !error && (
+          <div className="empty">
+            Wähle links einen Suchbereich, stelle die Filter ein und starte die Suche.
+            Die Bewertung dauert je nach Trefferzahl 1-3 Minuten.
+          </div>
+        )}
+
+        {listings.length > 0 && (
+          <div className="results">
+            {listings.map((l) => (
+              <ResultCard key={l.id} listing={l} />
+            ))}
+          </div>
+        )}
+
+        {job?.status === 'done' && listings.length === 0 && (
+          <div className="empty">Keine {resultTypeLabel} für deine Filter gefunden — versuche eine breitere Suche.</div>
+        )}
+      </main>
     </div>
   );
 }
