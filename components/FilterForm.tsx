@@ -8,6 +8,7 @@ import {
   ELECTRONICS_CONDITIONS,
   electronicsBrandsForCategory,
   electronicsCategoryPlural,
+  electronicsModelsFor,
 } from '@/lib/electronicsData';
 import Combobox from './Combobox';
 
@@ -57,6 +58,10 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
   // Modelle passend zur eingegebenen Marke (für das Modell-Datalist).
   const models = useMemo(() => modelsForBrand(make), [make]);
   const electronicsBrands = useMemo(() => electronicsBrandsForCategory(electronicsCategory), [electronicsCategory]);
+  const electronicsModels = useMemo(
+    () => electronicsModelsFor(electronicsCategory, electronicsBrand),
+    [electronicsCategory, electronicsBrand],
+  );
 
   const toggleFuel = (f: Fuel) => {
     setFuels((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
@@ -91,6 +96,15 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
       setElectronicsBrand(brands[0] || '');
     }
     setElectronicsQuery('');
+  };
+
+  // Beim Wechsel der Elektronik-Marke das Modell leeren, wenn es nicht mehr passt.
+  const handleElectronicsBrandChange = (val: string) => {
+    setElectronicsBrand(val);
+    const newModels = electronicsModelsFor(electronicsCategory, val);
+    if (electronicsQuery && newModels.length && !newModels.some((m) => m.toLowerCase() === electronicsQuery.toLowerCase())) {
+      setElectronicsQuery('');
+    }
   };
 
   const submit = (e: React.FormEvent) => {
@@ -194,7 +208,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
             <label>Marke</label>
             <Combobox
               value={electronicsBrand}
-              onChange={setElectronicsBrand}
+              onChange={handleElectronicsBrandChange}
               options={electronicsBrands}
               placeholder="Beliebig — tippen oder wählen…"
               anyLabel="Beliebig (alle Marken)"
@@ -203,10 +217,16 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
 
           <div className="field">
             <label>Modell oder Suchbegriff</label>
-            <input
+            <Combobox
               value={electronicsQuery}
-              onChange={(e) => setElectronicsQuery(e.target.value)}
-              placeholder={`${electronicsCategoryPlural(electronicsCategory)} suchen…`}
+              onChange={setElectronicsQuery}
+              options={electronicsModels}
+              placeholder={
+                electronicsModels.length
+                  ? 'Modell wählen oder frei tippen…'
+                  : `${electronicsCategoryPlural(electronicsCategory)} suchen…`
+              }
+              anyLabel="Beliebig (alle Modelle)"
             />
           </div>
         </>

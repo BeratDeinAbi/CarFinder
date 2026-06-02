@@ -80,9 +80,9 @@ export default function Page() {
     <div className="container">
       <div className="header">
         <div className="brand">
-          <div className="logo">CF</div>
+          <div className="logo">AF</div>
           <div>
-            <h1>CarFinder</h1>
+            <h1>AnzeigenFinder</h1>
             <div className="subtitle">Finde gute Autos und Elektrogeräte – KI-bewertet</div>
           </div>
         </div>

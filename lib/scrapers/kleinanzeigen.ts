@@ -20,58 +20,84 @@ function slugify(parts: Array<string | undefined>): string {
     .replace(/^-|-$/g, '');
 }
 
+// Kleinanzeigen filtert den Umkreis NICHT über die PLZ im Pfad (l<plz>r<km> wird
+// ignoriert), sondern über ?locationId=<interne-ID>&radius=<km>. Die interne ID
+// liefert die Orts-Autocomplete-API. Wir lösen die PLZ einmal auf und cachen sie.
+const _locIdCache = new Map<string, string | null>();
+
+async function resolveLocationId(zip: string): Promise<string | null> {
+  const key = zip.trim();
+  if (!key) return null;
+  if (_locIdCache.has(key)) return _locIdCache.get(key)!;
+
+  const id = await withPage(async (page) => {
+    try {
+      const resp = await page.goto(
+        `${BASE}/s-ort-empfehlungen.json?query=${encodeURIComponent(key)}`,
+        { waitUntil: 'domcontentloaded', timeout: 15000 },
+      );
+      if (!resp || !resp.ok()) return null;
+      const json = (await resp.json()) as Record<string, string>;
+      // Antwort z.B. {"_0":"Deutschland","_9668":"10115 Mitte","_3504":"10115 Wedding"}
+      // Wir nehmen den ersten Eintrag, dessen Schlüssel-ID != 0 ist (echter Ort).
+      for (const rawKey of Object.keys(json)) {
+        const idPart = rawKey.replace(/^_/, '');
+        if (idPart && idPart !== '0') return idPart;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
+
+  _locIdCache.set(key, id);
+  return id;
+}
+
 // Kleinanzeigen erwartet Filter als PFAD-Segmente, nicht als Query-Parameter.
 // Nur der Preis ist als Pfad-Segment zuverlässig: /s-autos/preis:MIN:MAX/<keyword>/k0c216
 // Baujahr/km/Kraftstoff werden NICHT in die URL gepackt (die +autos.*-Segmente sind
 // unzuverlässig und können die Suche auf 0 Treffer brechen) — das erledigt der
 // Code-Filter matchesFilters() nach dem Scrapen.
-function buildCarSearchUrl(f: SearchFilters, page: number): string {
+// Hängt den Umkreis-Filter als Query-Parameter an (?locationId=..&radius=..).
+// Nur so filtert Kleinanzeigen wirklich nach Standort (das l<plz>r<km> im Pfad
+// wird ignoriert). locationId wird vorab via resolveLocationId() aufgelöst.
+function withLocationQuery(url: string, locationId: string | null, radiusKm?: number): string {
+  if (!locationId) return url;
+  const params = new URLSearchParams();
+  params.set('locationId', locationId);
+  if (radiusKm) params.set('radius', String(radiusKm));
+  return `${url}?${params.toString()}`;
+}
+
+function buildCarSearchUrl(f: SearchFilters, page: number, locationId: string | null): string {
   const slug = slugify([f.make, f.model]);
   const priceSeg = f.priceMin || f.priceMax ? `/preis:${f.priceMin ?? ''}:${f.priceMax ?? ''}` : '';
   const pageSeg = page > 1 ? `/seite:${page}` : '';
 
-  // Location-Code (l<zip>r<radius>) — Platzierung hängt davon ab, ob ein Keyword existiert.
-  let loc = '';
-  if (f.zip) {
-    loc = `l${f.zip}`;
-    if (f.radiusKm) loc += `r${f.radiusKm}`;
-  }
-
-  if (slug) {
-    // MIT Keyword: Location als eigenes Segment VOR dem Keyword, Kategorie als /k0c216.
-    // /s-autos/preis:.../l10115r100/vw-golf/k0c216
-    const locSeg = loc ? `/${loc}` : '';
-    return `${BASE}/s-autos${priceSeg}${locSeg}/${slug}${pageSeg}/k0c216`;
-  }
-
-  // OHNE Keyword: Location wird DIREKT an den Kategorie-Code c216 angehängt (ohne k0).
-  // /s-autos/preis:.../c216l10115r50   bzw.   /s-autos/preis:.../c216
-  return `${BASE}/s-autos${priceSeg}${pageSeg}/c216${loc}`;
+  const base = slug
+    ? `${BASE}/s-autos${priceSeg}/${slug}${pageSeg}/k0c216`
+    : `${BASE}/s-autos${priceSeg}${pageSeg}/c216`;
+  return withLocationQuery(base, locationId, f.radiusKm);
 }
 
-function buildElectronicsSearchUrl(f: SearchFilters, page: number): string {
+function buildElectronicsSearchUrl(f: SearchFilters, page: number, locationId: string | null): string {
   const category = f.category ?? 'phone';
   const config = ELECTRONICS_CATEGORY_CONFIG[category];
   const slug = slugify([f.make, f.keyword || f.model || config.fallbackKeyword]);
   const priceSeg = f.priceMin || f.priceMax ? `/preis:${f.priceMin ?? ''}:${f.priceMax ?? ''}` : '';
   const pageSeg = page > 1 ? `/seite:${page}` : '';
 
-  let loc = '';
-  if (f.zip) {
-    loc = `l${f.zip}`;
-    if (f.radiusKm) loc += `r${f.radiusKm}`;
-  }
-
-  if (slug) {
-    const locSeg = loc ? `/${loc}` : '';
-    return `${BASE}/${config.path}${priceSeg}${locSeg}/${slug}${pageSeg}/k0${config.code}`;
-  }
-
-  return `${BASE}/${config.path}${priceSeg}${pageSeg}/${config.code}${loc}`;
+  const base = slug
+    ? `${BASE}/${config.path}${priceSeg}/${slug}${pageSeg}/k0${config.code}`
+    : `${BASE}/${config.path}${priceSeg}${pageSeg}/${config.code}`;
+  return withLocationQuery(base, locationId, f.radiusKm);
 }
 
-function buildSearchUrl(f: SearchFilters, page: number): string {
-  return f.domain === 'electronics' ? buildElectronicsSearchUrl(f, page) : buildCarSearchUrl(f, page);
+function buildSearchUrl(f: SearchFilters, page: number, locationId: string | null): string {
+  return f.domain === 'electronics'
+    ? buildElectronicsSearchUrl(f, page, locationId)
+    : buildCarSearchUrl(f, page, locationId);
 }
 
 // "Reserviert • Gelöscht • …" sind Boilerplate-Badges im Detail-Titel. Entfernen.
@@ -278,9 +304,11 @@ export async function scrapeKleinanzeigen(
   opts: { maxPages?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<NormalizedListing[]> {
   const maxPages = opts.maxPages ?? 2;
+  // PLZ einmal in die interne location-ID auflösen (für den Umkreisfilter).
+  const locationId = filters.zip ? await resolveLocationId(filters.zip) : null;
   const allCards: ListCard[] = [];
   for (let p = 1; p <= maxPages; p++) {
-    const url = buildSearchUrl(filters, p);
+    const url = buildSearchUrl(filters, p, locationId);
     const cards = await scrapeListPage(url);
     if (cards.length === 0) break;
     allCards.push(...cards);

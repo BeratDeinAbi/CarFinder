@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CarFinder',
-  description: 'Lokales Dashboard zur intelligenten Autosuche',
+  title: 'AnzeigenFinder',
+  description: 'Lokales Dashboard zur intelligenten Suche nach Autos und Elektrogeräten',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
