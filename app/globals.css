@@ -1,21 +1,21 @@
 /* ============ Design Tokens ============ */
 :root {
-  /* Light theme — helle Glas-Optik (frosted glass) wie Vorlage */
-  --bg: #d8dadf;
-  --bg-grad-1: #e7e9ee;
-  --bg-grad-2: #dfe2e8;
-  --panel: rgba(255, 255, 255, 0.72);
+  /* Light theme — helle Frosted-Glass-Optik wie Vorlage (kühles, neutrales Grau) */
+  --bg: #c4c7cd;
+  --bg-grad-1: #d4d7dd;
+  --bg-grad-2: #bcbfc6;
+  --panel: rgba(252, 252, 253, 0.55);
   --panel-solid: #ffffff;
-  --panel-2: rgba(255, 255, 255, 0.55);
-  --panel-3: rgba(245, 246, 249, 0.85);
-  --glass-blur: 18px;
-  --border: rgba(255, 255, 255, 0.7);
-  --border-strong: rgba(15, 23, 41, 0.12);
-  --text: #16181d;
-  --muted: #6b7280;
+  --panel-2: rgba(255, 255, 255, 0.45);
+  --panel-3: rgba(248, 249, 251, 0.7);
+  --glass-blur: 26px;
+  --border: rgba(255, 255, 255, 0.85);
+  --border-strong: rgba(20, 24, 31, 0.1);
+  --text: #1a1d23;
+  --muted: #71757d;
   --accent: #16181d;
-  --accent-2: #3a3d44;
-  --accent-soft: rgba(22, 24, 29, 0.06);
+  --accent-2: #34373d;
+  --accent-soft: rgba(22, 24, 29, 0.055);
   --accent-contrast: #ffffff;
   --good: #16a34a;
   --good-soft: rgba(22, 163, 74, 0.1);
@@ -23,10 +23,10 @@
   --warn-soft: rgba(217, 119, 6, 0.1);
   --bad: #dc2626;
   --bad-soft: rgba(220, 38, 38, 0.08);
-  --shadow-sm: 0 1px 2px rgba(15, 23, 41, 0.05), 0 1px 3px rgba(15, 23, 41, 0.06);
-  --shadow-md: 0 8px 24px rgba(15, 23, 41, 0.1), 0 2px 6px rgba(15, 23, 41, 0.05);
-  --shadow-lg: 0 20px 50px rgba(15, 23, 41, 0.16), 0 8px 16px rgba(15, 23, 41, 0.08);
-  --radius: 22px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 41, 0.06), 0 1px 3px rgba(15, 23, 41, 0.07);
+  --shadow-md: 0 10px 30px rgba(15, 23, 41, 0.12), 0 2px 8px rgba(15, 23, 41, 0.06);
+  --shadow-lg: 0 24px 60px rgba(15, 23, 41, 0.18), 0 8px 18px rgba(15, 23, 41, 0.1);
+  --radius: 26px;
   --radius-sm: 13px;
 }
 
@@ -67,8 +67,12 @@ body {
   margin: 0;
   padding: 0;
   background: var(--bg);
-  background-image: radial-gradient(1200px 600px at 100% -10%, var(--bg-grad-2), transparent),
-    radial-gradient(1000px 500px at -10% 0%, var(--bg-grad-1), transparent);
+  /* Mehrere weiche Lichtflecken -> der Glas-Blur der Panels wird sichtbar */
+  background-image:
+    radial-gradient(900px 500px at 12% 8%, var(--bg-grad-1), transparent 60%),
+    radial-gradient(800px 600px at 88% 18%, var(--bg-grad-2), transparent 55%),
+    radial-gradient(700px 500px at 70% 95%, var(--bg-grad-1), transparent 60%),
+    radial-gradient(600px 400px at 25% 80%, rgba(255, 255, 255, 0.4), transparent 55%);
   background-attachment: fixed;
   color: var(--text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -89,8 +93,8 @@ a {
   grid-template-columns: 248px 340px 1fr;
   gap: 16px;
   padding: 16px;
-  min-height: 100vh;
-  align-items: start;
+  height: 100vh;
+  align-items: stretch;
   transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -107,19 +111,18 @@ a {
   grid-template-columns: 76px 0 1fr;
 }
 
-/* Gemeinsame Glas-Optik für alle drei Panels */
+/* Gemeinsame Glas-Optik für alle drei Panels — volle Höhe bis ganz nach unten */
 .rail,
 .filter-panel,
 .content {
   background: var(--panel);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
-  position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
+  height: 100%;
+  min-height: 0;
 }
 
 /* ---- Linke Navigationsleiste (Rail) ---- */
