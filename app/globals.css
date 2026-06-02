@@ -196,7 +196,11 @@ a {
 }
 
 .domain-switch button {
-  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -208,6 +212,11 @@ a {
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.domain-switch button .ds-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .domain-switch button.active {
   background: var(--panel);
   color: var(--accent);
@@ -217,6 +226,40 @@ a {
 .domain-switch button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* ============ Filter sections ============ */
+.filter-section {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-section:last-of-type {
+  border-bottom: 0;
+  margin-bottom: 8px;
+  padding-bottom: 0;
+}
+
+.filter-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.filter-section-title .fs-icon {
+  font-size: 13px;
+}
+
+/* Letztes Feld im Abschnitt ohne Abstand nach unten (Trennlinie übernimmt das). */
+.filter-section .field:last-child {
+  margin-bottom: 0;
 }
 
 /* ============ Form fields ============ */

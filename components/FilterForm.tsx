@@ -155,6 +155,7 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
           onClick={() => handleDomainChange('cars')}
           disabled={disabled}
         >
+          <span className="ds-icon" aria-hidden>🚗</span>
           Autos
         </button>
         <button
@@ -163,170 +164,168 @@ export default function FilterForm({ onSubmit, disabled }: Props) {
           onClick={() => handleDomainChange('electronics')}
           disabled={disabled}
         >
+          <span className="ds-icon" aria-hidden>📱</span>
           Elektrogeräte
         </button>
       </div>
 
       {domain === 'cars' ? (
         <>
-          <div className="field">
-            <label>Marke</label>
-            <Combobox
-              value={make}
-              onChange={handleMakeChange}
-              options={BRANDS}
-              placeholder="Beliebig — tippen oder wählen…"
-              anyLabel="Beliebig (alle Marken)"
-            />
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden>🚙</span>Fahrzeug</div>
+            <div className="field">
+              <label>Marke</label>
+              <Combobox
+                value={make}
+                onChange={handleMakeChange}
+                options={BRANDS}
+                placeholder="Beliebig — tippen oder wählen…"
+                anyLabel="Beliebig (alle Marken)"
+              />
+            </div>
+            <div className="field">
+              <label>Modell</label>
+              <Combobox
+                value={model}
+                onChange={setModel}
+                options={models}
+                placeholder={make ? 'Beliebig — Modell wählen…' : 'Erst Marke wählen'}
+                anyLabel="Beliebig (alle Modelle)"
+              />
+            </div>
           </div>
 
-          <div className="field">
-            <label>Modell</label>
-            <Combobox
-              value={model}
-              onChange={setModel}
-              options={models}
-              placeholder={make ? 'Beliebig — Modell wählen…' : 'Erst Marke wählen'}
-              anyLabel="Beliebig (alle Modelle)"
-            />
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden>💶</span>Preis &amp; Eckdaten</div>
+            <div className="field">
+              <label>Preis (€)</label>
+              <div className="row-2">
+                <input type="number" inputMode="numeric" min={0} step={100} placeholder="beliebig" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
+                <input type="number" inputMode="numeric" min={0} step={100} placeholder="beliebig" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+              </div>
+            </div>
+            <div className="field">
+              <label>Baujahr</label>
+              <div className="row-2">
+                <input type="number" inputMode="numeric" placeholder="beliebig" value={yearMin} onChange={(e) => setYearMin(e.target.value)} />
+                <input type="number" inputMode="numeric" placeholder="beliebig" value={yearMax} onChange={(e) => setYearMax(e.target.value)} />
+              </div>
+            </div>
+            <div className="field">
+              <label>Max. km</label>
+              <input type="number" inputMode="numeric" step={5000} placeholder="beliebig" value={kmMax} onChange={(e) => setKmMax(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden>⚙️</span>Ausstattung</div>
+            <div className="field">
+              <label>Kraftstoff</label>
+              <div className="checkbox-group">
+                {FUELS.map((f) => (
+                  <label key={f.value}>
+                    <input type="checkbox" checked={fuels.includes(f.value)} onChange={() => toggleFuel(f.value)} />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Getriebe</label>
+              <select value={gearbox} onChange={(e) => setGearbox(e.target.value as any)}>
+                <option value="any">Egal</option>
+                <option value="manual">Schalter</option>
+                <option value="automatic">Automatik</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Karosserieform</label>
+              <select value={bodyType} onChange={(e) => setBodyType(e.target.value as BodyType | 'any')}>
+                {BODY_TYPES.map((b) => (
+                  <option key={b.value} value={b.value}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </>
       ) : (
         <>
-          <div className="field">
-            <label>Kategorie</label>
-            <select value={electronicsCategory} onChange={(e) => handleElectronicsCategoryChange(e.target.value as ElectronicsCategory)}>
-              {ELECTRONICS_CATEGORIES.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden>📦</span>Gerät</div>
+            <div className="field">
+              <label>Kategorie</label>
+              <select value={electronicsCategory} onChange={(e) => handleElectronicsCategoryChange(e.target.value as ElectronicsCategory)}>
+                {ELECTRONICS_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Marke</label>
+              <Combobox
+                value={electronicsBrand}
+                onChange={handleElectronicsBrandChange}
+                options={electronicsBrands}
+                placeholder="Beliebig — tippen oder wählen…"
+                anyLabel="Beliebig (alle Marken)"
+              />
+            </div>
+            <div className="field">
+              <label>Modell oder Suchbegriff</label>
+              <Combobox
+                value={electronicsQuery}
+                onChange={setElectronicsQuery}
+                options={electronicsModels}
+                placeholder={
+                  electronicsModels.length
+                    ? 'Modell wählen oder frei tippen…'
+                    : `${electronicsCategoryPlural(electronicsCategory)} suchen…`
+                }
+                anyLabel="Beliebig (alle Modelle)"
+              />
+            </div>
           </div>
 
-          <div className="field">
-            <label>Marke</label>
-            <Combobox
-              value={electronicsBrand}
-              onChange={handleElectronicsBrandChange}
-              options={electronicsBrands}
-              placeholder="Beliebig — tippen oder wählen…"
-              anyLabel="Beliebig (alle Marken)"
-            />
-          </div>
-
-          <div className="field">
-            <label>Modell oder Suchbegriff</label>
-            <Combobox
-              value={electronicsQuery}
-              onChange={setElectronicsQuery}
-              options={electronicsModels}
-              placeholder={
-                electronicsModels.length
-                  ? 'Modell wählen oder frei tippen…'
-                  : `${electronicsCategoryPlural(electronicsCategory)} suchen…`
-              }
-              anyLabel="Beliebig (alle Modelle)"
-            />
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden>💶</span>Preis &amp; Zustand</div>
+            <div className="field">
+              <label>Preis (€)</label>
+              <div className="row-2">
+                <input type="number" inputMode="numeric" min={0} step={100} placeholder="beliebig" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
+                <input type="number" inputMode="numeric" min={0} step={100} placeholder="beliebig" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+              </div>
+            </div>
+            <div className="field">
+              <label>Zustand</label>
+              <select value={condition} onChange={(e) => setCondition(e.target.value as ElectronicsCondition)}>
+                {ELECTRONICS_CONDITIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </>
       )}
 
-      <div className="field">
-        <label>Preis (€)</label>
-        <div className="row-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={100}
-            placeholder="beliebig"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={100}
-            placeholder="beliebig"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {domain === 'cars' ? (
-        <>
-          <div className="field">
-            <label>Baujahr</label>
-            <div className="row-2">
-              <input type="number" inputMode="numeric" placeholder="beliebig" value={yearMin} onChange={(e) => setYearMin(e.target.value)} />
-              <input type="number" inputMode="numeric" placeholder="beliebig" value={yearMax} onChange={(e) => setYearMax(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Max. km</label>
-            <input type="number" inputMode="numeric" step={5000} placeholder="beliebig" value={kmMax} onChange={(e) => setKmMax(e.target.value)} />
-          </div>
-
-          <div className="field">
-            <label>Kraftstoff</label>
-            <div className="checkbox-group">
-              {FUELS.map((f) => (
-                <label key={f.value}>
-                  <input type="checkbox" checked={fuels.includes(f.value)} onChange={() => toggleFuel(f.value)} />
-                  {f.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Getriebe</label>
-            <select value={gearbox} onChange={(e) => setGearbox(e.target.value as any)}>
-              <option value="any">Egal</option>
-              <option value="manual">Schalter</option>
-              <option value="automatic">Automatik</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label>Karosserieform</label>
-            <select value={bodyType} onChange={(e) => setBodyType(e.target.value as BodyType | 'any')}>
-              {BODY_TYPES.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </>
-      ) : (
+      <div className="filter-section">
+        <div className="filter-section-title"><span className="fs-icon" aria-hidden>📍</span>Ort &amp; Wunsch</div>
         <div className="field">
-          <label>Zustand</label>
-          <select value={condition} onChange={(e) => setCondition(e.target.value as ElectronicsCondition)}>
-            {ELECTRONICS_CONDITIONS.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <label>PLZ + Umkreis (km)</label>
+          <div className="row-2">
+            <input value={zip} onChange={(e) => setZip(e.target.value)} placeholder="PLZ" />
+            <input type="number" value={radiusKm} onChange={(e) => setRadiusKm(e.target.value)} placeholder="km" />
+          </div>
         </div>
-      )}
-
-      <div className="field">
-        <label>PLZ + Umkreis (km)</label>
-        <div className="row-2">
-          <input value={zip} onChange={(e) => setZip(e.target.value)} placeholder="PLZ" />
-          <input type="number" value={radiusKm} onChange={(e) => setRadiusKm(e.target.value)} placeholder="km" />
+        <div className="field">
+          <label>Was wünschst du dir? (Freitext)</label>
+          <textarea value={wish} onChange={(e) => setWish(e.target.value)} />
         </div>
-      </div>
-
-      <div className="field">
-        <label>Was wünschst du dir? (Freitext)</label>
-        <textarea value={wish} onChange={(e) => setWish(e.target.value)} />
       </div>
 
       <button type="submit" className="btn" disabled={disabled}>
