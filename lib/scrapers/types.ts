@@ -1,10 +1,14 @@
 export type Source = 'mobile' | 'kleinanzeigen';
+export type SearchDomain = 'cars' | 'electronics';
 
 export type Fuel = 'petrol' | 'diesel' | 'hybrid' | 'electric' | 'other';
 export type Gearbox = 'manual' | 'automatic' | 'other';
 export type BodyType = 'estate' | 'sedan' | 'convertible' | 'suv' | 'small' | 'coupe' | 'van' | 'other';
+export type ElectronicsCategory = 'phone' | 'monitor' | 'laptop' | 'pc';
+export type ElectronicsCondition = 'any' | 'new' | 'like_new' | 'good' | 'used' | 'defective';
 
 export interface SearchFilters {
+  domain?: SearchDomain;
   make?: string;
   model?: string;
   priceMin?: number;
@@ -15,6 +19,9 @@ export interface SearchFilters {
   fuels?: Fuel[];
   gearbox?: Gearbox | 'any';
   bodyType?: BodyType | 'any';
+  category?: ElectronicsCategory;
+  condition?: ElectronicsCondition;
+  keyword?: string;
   zip?: string;
   radiusKm?: number;
   wish?: string;
@@ -23,6 +30,7 @@ export interface SearchFilters {
 export interface NormalizedListing {
   id: string;
   source: Source;
+  domain: SearchDomain;
   platformId: string;
   url: string;
   title: string;
@@ -33,6 +41,8 @@ export interface NormalizedListing {
   gearbox: Gearbox | null;
   bodyType: BodyType | null;
   power_kw: number | null;
+  category: ElectronicsCategory | null;
+  condition: ElectronicsCondition | null;
   location: string | null;
   description: string;
   thumbnail: string | null;

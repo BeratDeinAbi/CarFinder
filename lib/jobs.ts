@@ -11,7 +11,7 @@ import {
 import { scrapeMobileDe } from './scrapers/mobile';
 import { scrapeKleinanzeigen } from './scrapers/kleinanzeigen';
 import { closeBrowser, runConcurrent } from './scrapers/browser';
-import { getWishHash, rankListing } from './ranker';
+import { getFiltersHash, rankListing } from './ranker';
 import type { JobInfo, NormalizedListing, ScoredListing, SearchFilters } from './scrapers/types';
 
 export function startJob(filters: SearchFilters): string {
@@ -27,13 +27,14 @@ export function startJob(filters: SearchFilters): string {
 
 async function runJob(jobId: string, filters: SearchFilters): Promise<void> {
   updateJob(jobId, { status: 'scraping' });
+  const domain = filters.domain ?? 'cars';
 
   const all: NormalizedListing[] = [];
 
   // mobile.de ist standardmäßig AUS: Cloudflare blockt headless-Browser zuverlässig,
   // das kostet nur Zeit und erzeugt Fehlermeldungen. Mit ENABLE_MOBILE_DE=1 in
   // .env.local wieder aktivierbar (dann ggf. mit Proxy nötig).
-  if (process.env.ENABLE_MOBILE_DE === '1') {
+  if (domain === 'cars' && process.env.ENABLE_MOBILE_DE === '1') {
     try {
       const mobile = await scrapeMobileDe(filters, {
         maxPages: 2,
@@ -81,7 +82,7 @@ async function runJob(jobId: string, filters: SearchFilters): Promise<void> {
     1,
     async (listing) => {
       try {
-        await rankListing(listing, filters.wish);
+        await rankListing(listing, filters);
       } catch (e: any) {
         appendJobError(jobId, `rank ${listing.id}: ${e?.message || e}`);
       }
@@ -99,7 +100,7 @@ export function getJobResult(jobId: string): { job: JobInfo; listings: ScoredLis
   const job = getJob(jobId);
   if (!job) return null;
   const listings = getJobListings(jobId);
-  const wishHash = getWishHash(job.filters.wish);
+  const wishHash = getFiltersHash(job.filters);
   const enriched: ScoredListing[] = listings.map((l) => {
     const score = getScore(l.id, wishHash);
     return score ? { ...l, score } : l;

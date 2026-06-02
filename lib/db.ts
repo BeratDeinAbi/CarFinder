@@ -27,6 +27,7 @@ function db(): DatabaseSync {
     CREATE TABLE IF NOT EXISTS listings (
       id TEXT PRIMARY KEY,
       source TEXT NOT NULL,
+      domain TEXT NOT NULL DEFAULT 'cars',
       platform_id TEXT NOT NULL,
       url TEXT NOT NULL,
       title TEXT NOT NULL,
@@ -37,6 +38,8 @@ function db(): DatabaseSync {
       gearbox TEXT,
       body_type TEXT,
       power_kw INTEGER,
+      category TEXT,
+      condition TEXT,
       location TEXT,
       description TEXT NOT NULL,
       thumbnail TEXT,
@@ -63,10 +66,19 @@ function db(): DatabaseSync {
     );
   `);
 
-  // Migration: body_type-Spalte für bereits existierende Datenbanken nachrüsten.
+  // Migrations: neue Spalten für bereits existierende Datenbanken nachrüsten.
   const cols = _db.prepare(`PRAGMA table_info(listings)`).all() as Array<{ name: string }>;
   if (!cols.some((c) => c.name === 'body_type')) {
     _db.exec(`ALTER TABLE listings ADD COLUMN body_type TEXT`);
+  }
+  if (!cols.some((c) => c.name === 'domain')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN domain TEXT NOT NULL DEFAULT 'cars'`);
+  }
+  if (!cols.some((c) => c.name === 'category')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN category TEXT`);
+  }
+  if (!cols.some((c) => c.name === 'condition')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN condition TEXT`);
   }
 
   return _db;
@@ -124,17 +136,19 @@ export function getJob(id: string): JobInfo | null {
 export function upsertListing(l: NormalizedListing): void {
   db()
     .prepare(
-      `INSERT INTO listings (id, source, platform_id, url, title, price, km, year, fuel, gearbox, body_type, power_kw, location, description, thumbnail, fetched_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO listings (id, source, domain, platform_id, url, title, price, km, year, fuel, gearbox, body_type, power_kw, category, condition, location, description, thumbnail, fetched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(source, platform_id) DO UPDATE SET
          title=excluded.title, price=excluded.price, km=excluded.km, year=excluded.year,
          fuel=excluded.fuel, gearbox=excluded.gearbox, body_type=excluded.body_type, power_kw=excluded.power_kw,
+         domain=excluded.domain, category=excluded.category, condition=excluded.condition,
          location=excluded.location, description=excluded.description,
          thumbnail=excluded.thumbnail, fetched_at=excluded.fetched_at`,
     )
     .run(
       l.id,
       l.source,
+      l.domain,
       l.platformId,
       l.url,
       l.title,
@@ -145,6 +159,8 @@ export function upsertListing(l: NormalizedListing): void {
       l.gearbox,
       l.bodyType,
       l.power_kw,
+      l.category,
+      l.condition,
       l.location,
       l.description,
       l.thumbnail,
@@ -170,6 +186,7 @@ function rowToListing(row: any): NormalizedListing {
   return {
     id: row.id,
     source: row.source,
+    domain: row.domain ?? 'cars',
     platformId: row.platform_id,
     url: row.url,
     title: row.title,
@@ -180,6 +197,8 @@ function rowToListing(row: any): NormalizedListing {
     gearbox: row.gearbox,
     bodyType: row.body_type ?? null,
     power_kw: row.power_kw,
+    category: row.category ?? null,
+    condition: row.condition ?? null,
     location: row.location,
     description: row.description,
     thumbnail: row.thumbnail,

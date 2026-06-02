@@ -168,6 +168,7 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
       return {
         id: `mobile:${card.platformId}`,
         source: 'mobile',
+        domain: 'cars',
         platformId: card.platformId,
         url: card.url,
         title: data.title,
@@ -178,6 +179,8 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
         gearbox,
         bodyType: null,
         power_kw,
+        category: null,
+        condition: null,
         location: data.location || null,
         description: data.description || '',
         thumbnail: card.thumbnail,

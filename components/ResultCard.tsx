@@ -1,4 +1,5 @@
 import type { ScoredListing } from '@/lib/scrapers/types';
+import { electronicsCategoryLabel } from '@/lib/electronicsData';
 import ScoreBadge from './ScoreBadge';
 
 interface Props {
@@ -15,7 +16,17 @@ function fmtKm(n: number | null): string {
   return `${n.toLocaleString('de-DE')} km`;
 }
 
+const CONDITION_LABEL: Record<string, string> = {
+  new: 'Neu',
+  like_new: 'Wie neu',
+  good: 'Gut',
+  used: 'Gebraucht',
+  defective: 'Defekt',
+};
+
 export default function ResultCard({ listing: l }: Props) {
+  const isElectronics = l.domain === 'electronics';
+
   return (
     <a href={l.url} target="_blank" rel="noopener noreferrer" className="card" style={{ color: 'inherit' }}>
       <div
@@ -26,10 +37,19 @@ export default function ResultCard({ listing: l }: Props) {
         <div className="title">{l.title}</div>
         <div className="meta">
           <span><strong>{fmtEUR(l.price)}</strong></span>
-          <span>{fmtKm(l.km)}</span>
-          {l.year && <span>{l.year}</span>}
-          {l.fuel && <span>{l.fuel}</span>}
-          {l.gearbox && <span>{l.gearbox === 'automatic' ? 'Automatik' : 'Schalter'}</span>}
+          {isElectronics ? (
+            <>
+              {l.category && <span>{electronicsCategoryLabel(l.category)}</span>}
+              {l.condition && l.condition !== 'any' && <span>{CONDITION_LABEL[l.condition] || l.condition}</span>}
+            </>
+          ) : (
+            <>
+              <span>{fmtKm(l.km)}</span>
+              {l.year && <span>{l.year}</span>}
+              {l.fuel && <span>{l.fuel}</span>}
+              {l.gearbox && <span>{l.gearbox === 'automatic' ? 'Automatik' : 'Schalter'}</span>}
+            </>
+          )}
         </div>
         {l.location && <div className="meta">{l.location}</div>}
         {l.score && (

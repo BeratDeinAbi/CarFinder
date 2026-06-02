@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import type { ListingScore, NormalizedListing } from './scrapers/types';
+import { electronicsCategoryLabel } from './electronicsData';
+import type { ListingScore, NormalizedListing, SearchDomain, SearchFilters } from './scrapers/types';
 import { getScore, saveScore } from './db';
 
 // Kostenloser Google-Gemini-Tarif (Google AI Studio).
@@ -8,7 +9,7 @@ import { getScore, saveScore } from './db';
 // für das Lesen/Bewerten von Anzeigentexten völlig ausreichend.
 const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
-const RUBRIC = `Du bist ein erfahrener KFZ-Experte und Autohändler. Du bewertest Gebrauchtwagen-Inserate und gibst eine ehrliche Einschätzung für einen Privatkäufer.
+const CAR_RUBRIC = `Du bist ein erfahrener KFZ-Experte und Autohändler. Du bewertest Gebrauchtwagen-Inserate und gibst eine ehrliche Einschätzung für einen Privatkäufer.
 
 # Bewertungskriterien (Score 0-100)
 
@@ -35,6 +36,32 @@ const RUBRIC = `Du bist ein erfahrener KFZ-Experte und Autohändler. Du bewertes
 
 Antworte auf Deutsch. Maximal 4 Einträge pro Liste (pros, cons, red_flags); die Listen dürfen leer sein.`;
 
+const ELECTRONICS_RUBRIC = `Du bist ein erfahrener Gebraucht-Elektronik-Experte. Du bewertest Inserate für Handys, Monitore, Laptops und PCs und gibst eine ehrliche Einschätzung für einen Privatkäufer.
+
+# Bewertungskriterien (Score 0-100)
+
+**Preis-Leistung (bis 25 Pkt):** Passt der Preis zu Alter, Marke, Modell, Ausstattung und Zustand? Ein deutlich zu niedriger Preis ist verdächtig, ein sehr hoher Preis muss durch Garantie, Zubehör oder Top-Zustand erklärbar sein.
+
+**Zustand & Funktionsfähigkeit (bis 25 Pkt):** Werden Zustand, Mängel, Akkuzustand, Display, Anschlüsse, Tastatur, Lüfter, Pixelfehler, Gehäuse und Tests konkret beschrieben? "voll funktionsfähig", "Rechnung", "OVP" und "kann getestet werden" sind positiv.
+
+**Technische Daten (bis 20 Pkt):** Sind bei Laptops/PCs CPU, RAM, SSD, GPU, Displaygröße und Betriebssystem klar genannt? Bei Handys Speicher, Akkuzustand, Display/Face ID/Kamera. Bei Monitoren Auflösung, Zoll, Hz, Panel, Anschlüsse und Pixelfehler.
+
+**Verkäufer-Signale (bis 15 Pkt):** Seriöse Beschreibung, echte Fotos, Abholung/Test möglich, Garantie/Rechnung, klare Kommunikation. Kurze generische Texte, Versanddruck oder ausweichende Angaben sind kritisch.
+
+**Passung zum Wunsch des Käufers (bis 15 Pkt):** Wie gut passt das Inserat zum Freitext-Wunsch? Gaming, Office, Uni, Bildbearbeitung, Homeoffice oder günstiger Alltag haben unterschiedliche Prioritäten.
+
+# Red Flags (immer auflisten, falls gefunden)
+
+- "defekt", "für Bastler", "Ersatzteile", "Displaybruch", "Wasserschaden"
+- iCloud-/Google-/BIOS-Sperre, "Passwort vergessen", keine Entsperrung möglich
+- Akku stark verschlissen, aufgebläht oder nicht genannt bei teuren Geräten
+- Keine technischen Daten bei Laptop/PC/Monitor
+- Preis deutlich unter Marktniveau ohne Erklärung
+- Nur Versand, kein Test, ungewöhnlicher Zahlungsdruck
+- Keine Rechnung/Seriennummer bei sehr teurer oder neuer Ware
+
+Antworte auf Deutsch. Maximal 4 Einträge pro Liste (pros, cons, red_flags); die Listen dürfen leer sein.`;
+
 interface GeminiScore {
   score: number;
   summary: string;
@@ -43,8 +70,8 @@ interface GeminiScore {
   red_flags: string[];
 }
 
-function hashWish(wish: string | undefined): string {
-  return crypto.createHash('sha1').update((wish || '').trim()).digest('hex').slice(0, 12);
+function hashWish(wish: string | undefined, domain: SearchDomain | undefined): string {
+  return crypto.createHash('sha1').update(`${domain ?? 'cars'}:${(wish || '').trim()}`).digest('hex').slice(0, 12);
 }
 
 function apiKey(): string {
@@ -53,21 +80,39 @@ function apiKey(): string {
   return key;
 }
 
-function buildUserContent(l: NormalizedListing, wish: string | undefined): string {
+function buildUserContent(l: NormalizedListing, filters: SearchFilters): string {
+  const base = {
+    titel: l.title,
+    preis_eur: l.price,
+    ort: l.location,
+    quelle: l.source,
+    beschreibung: l.description.slice(0, 4000),
+    wunsch_des_kaeufers: filters.wish || '(kein Freitext)',
+  };
+
+  if (l.domain === 'electronics') {
+    return JSON.stringify(
+      {
+        ...base,
+        produktbereich: electronicsCategoryLabel(l.category ?? filters.category),
+        gesuchte_marke: filters.make,
+        gesuchtes_modell_oder_keyword: filters.keyword || filters.model,
+        zustand: l.condition || filters.condition,
+      },
+      null,
+      2,
+    );
+  }
+
   return JSON.stringify(
     {
-      titel: l.title,
-      preis_eur: l.price,
+      ...base,
       km_stand: l.km,
       baujahr: l.year,
       kraftstoff: l.fuel,
       getriebe: l.gearbox,
       karosserie: l.bodyType,
       leistung_kw: l.power_kw,
-      ort: l.location,
-      quelle: l.source,
-      beschreibung: l.description.slice(0, 4000),
-      wunsch_des_kaeufers: wish || '(kein Freitext)',
     },
     null,
     2,
@@ -88,10 +133,10 @@ const RESPONSE_SCHEMA = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function callGemini(userContent: string): Promise<GeminiScore | null> {
+async function callGemini(userContent: string, rubric: string): Promise<GeminiScore | null> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey()}`;
   const body = {
-    systemInstruction: { parts: [{ text: RUBRIC }] },
+    systemInstruction: { parts: [{ text: rubric }] },
     contents: [{ role: 'user', parts: [{ text: userContent }] }],
     generationConfig: {
       temperature: 0.2,
@@ -157,13 +202,13 @@ async function callGemini(userContent: string): Promise<GeminiScore | null> {
 
 export async function rankListing(
   l: NormalizedListing,
-  wish: string | undefined,
+  filters: SearchFilters,
 ): Promise<ListingScore> {
-  const wishHash = hashWish(wish);
+  const wishHash = hashWish(filters.wish, l.domain);
   const cached = getScore(l.id, wishHash);
   if (cached) return cached;
 
-  const parsed = await callGemini(buildUserContent(l, wish));
+  const parsed = await callGemini(buildUserContent(l, filters), l.domain === 'electronics' ? ELECTRONICS_RUBRIC : CAR_RUBRIC);
 
   const score: ListingScore = parsed
     ? {
@@ -188,5 +233,9 @@ export async function rankListing(
 }
 
 export function getWishHash(wish: string | undefined): string {
-  return hashWish(wish);
+  return hashWish(wish, 'cars');
+}
+
+export function getFiltersHash(filters: SearchFilters): string {
+  return hashWish(filters.wish, filters.domain);
 }

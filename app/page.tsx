@@ -73,15 +73,17 @@ export default function Page() {
   const listings = data?.listings || [];
   const isRunning = job && job.status !== 'done' && job.status !== 'error';
   const scoreProgress = job && job.totalFound > 0 ? (job.totalScored / job.totalFound) * 100 : 0;
+  const activeDomain = job?.filters.domain ?? 'cars';
+  const resultTypeLabel = activeDomain === 'electronics' ? 'Elektrogeräte' : 'Autos';
 
   return (
     <div className="container">
       <div className="header">
         <div className="brand">
-          <div className="logo">🚗</div>
+          <div className="logo">CF</div>
           <div>
             <h1>CarFinder</h1>
-            <div className="subtitle">Finde den besten Gebrauchten – KI-bewertet</div>
+            <div className="subtitle">Finde gute Autos und Elektrogeräte – KI-bewertet</div>
           </div>
         </div>
         <ThemeToggle />
@@ -120,7 +122,7 @@ export default function Page() {
 
           {!job && !error && (
             <div className="empty">
-              Filter links ausfüllen und „Autos finden" klicken. Die Suche dauert je nach Trefferzahl 1-3 Minuten.
+              Suchbereich wählen, Filter ausfüllen und die Suche starten. Die Bewertung dauert je nach Trefferzahl 1-3 Minuten.
             </div>
           )}
 
@@ -133,7 +135,7 @@ export default function Page() {
           )}
 
           {job?.status === 'done' && listings.length === 0 && (
-            <div className="empty">Keine Treffer für deine Filter — versuche eine breitere Suche.</div>
+            <div className="empty">Keine {resultTypeLabel} für deine Filter gefunden — versuche eine breitere Suche.</div>
           )}
         </div>
       </div>

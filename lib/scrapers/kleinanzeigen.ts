@@ -1,22 +1,32 @@
 import type { Page } from 'playwright';
 import { withPage, jitter, runConcurrent, detectBlock } from './browser';
 import { getCachedListing, upsertListing } from '../db';
-import type { BodyType, Fuel, Gearbox, NormalizedListing, SearchFilters } from './types';
+import type { BodyType, ElectronicsCategory, ElectronicsCondition, Fuel, Gearbox, NormalizedListing, SearchFilters } from './types';
 
 const BASE = 'https://www.kleinanzeigen.de';
+const ELECTRONICS_CATEGORY_CONFIG: Record<ElectronicsCategory, { path: string; code: string; fallbackKeyword: string }> = {
+  phone: { path: 's-handy-telefon', code: 'c173', fallbackKeyword: 'handy' },
+  monitor: { path: 's-pc-zubehoer-software', code: 'c225', fallbackKeyword: 'monitor' },
+  laptop: { path: 's-notebooks', code: 'c278', fallbackKeyword: 'laptop' },
+  pc: { path: 's-pcs', code: 'c228', fallbackKeyword: 'pc' },
+};
+
+function slugify(parts: Array<string | undefined>): string {
+  return parts
+    .filter(Boolean)
+    .join('-')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
 
 // Kleinanzeigen erwartet Filter als PFAD-Segmente, nicht als Query-Parameter.
 // Nur der Preis ist als Pfad-Segment zuverlässig: /s-autos/preis:MIN:MAX/<keyword>/k0c216
 // Baujahr/km/Kraftstoff werden NICHT in die URL gepackt (die +autos.*-Segmente sind
 // unzuverlässig und können die Suche auf 0 Treffer brechen) — das erledigt der
 // Code-Filter matchesFilters() nach dem Scrapen.
-function buildSearchUrl(f: SearchFilters, page: number): string {
-  const slug = [f.make, f.model]
-    .filter(Boolean)
-    .join('-')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+function buildCarSearchUrl(f: SearchFilters, page: number): string {
+  const slug = slugify([f.make, f.model]);
   const priceSeg = f.priceMin || f.priceMax ? `/preis:${f.priceMin ?? ''}:${f.priceMax ?? ''}` : '';
   const pageSeg = page > 1 ? `/seite:${page}` : '';
 
@@ -37,6 +47,31 @@ function buildSearchUrl(f: SearchFilters, page: number): string {
   // OHNE Keyword: Location wird DIREKT an den Kategorie-Code c216 angehängt (ohne k0).
   // /s-autos/preis:.../c216l10115r50   bzw.   /s-autos/preis:.../c216
   return `${BASE}/s-autos${priceSeg}${pageSeg}/c216${loc}`;
+}
+
+function buildElectronicsSearchUrl(f: SearchFilters, page: number): string {
+  const category = f.category ?? 'phone';
+  const config = ELECTRONICS_CATEGORY_CONFIG[category];
+  const slug = slugify([f.make, f.keyword || f.model || config.fallbackKeyword]);
+  const priceSeg = f.priceMin || f.priceMax ? `/preis:${f.priceMin ?? ''}:${f.priceMax ?? ''}` : '';
+  const pageSeg = page > 1 ? `/seite:${page}` : '';
+
+  let loc = '';
+  if (f.zip) {
+    loc = `l${f.zip}`;
+    if (f.radiusKm) loc += `r${f.radiusKm}`;
+  }
+
+  if (slug) {
+    const locSeg = loc ? `/${loc}` : '';
+    return `${BASE}/${config.path}${priceSeg}${locSeg}/${slug}${pageSeg}/k0${config.code}`;
+  }
+
+  return `${BASE}/${config.path}${priceSeg}${pageSeg}/${config.code}${loc}`;
+}
+
+function buildSearchUrl(f: SearchFilters, page: number): string {
+  return f.domain === 'electronics' ? buildElectronicsSearchUrl(f, page) : buildCarSearchUrl(f, page);
 }
 
 // "Reserviert • Gelöscht • …" sind Boilerplate-Badges im Detail-Titel. Entfernen.
@@ -62,10 +97,25 @@ function mapBodyType(raw: string | null): BodyType | null {
   return 'other';
 }
 
+function mapCondition(raw: string | null): ElectronicsCondition | null {
+  if (!raw) return null;
+  const s = raw.toLowerCase();
+  if (s.includes('defekt') || s.includes('ersatzteil')) return 'defective';
+  if (s.includes('wie neu') || s.includes('sehr gut')) return 'like_new';
+  if (s.includes('neu')) return 'new';
+  if (s.includes('gut')) return 'good';
+  if (s.includes('gebraucht') || s.includes('in ordnung')) return 'used';
+  return null;
+}
+
 // Sicherheitsnetz: nur Anzeigen behalten, die wirklich zu den Filtern passen.
 function matchesFilters(l: NormalizedListing, f: SearchFilters): boolean {
   if (f.priceMin != null && l.price != null && l.price < f.priceMin) return false;
   if (f.priceMax != null && l.price != null && l.price > f.priceMax) return false;
+  if (f.domain === 'electronics') {
+    if (f.condition && f.condition !== 'any' && l.condition && l.condition !== f.condition) return false;
+    return true;
+  }
   if (f.yearMin != null && l.year != null && l.year < f.yearMin) return false;
   if (f.yearMax != null && l.year != null && l.year > f.yearMax) return false;
   if (f.kmMax != null && l.km != null && l.km > f.kmMax) return false;
@@ -135,7 +185,7 @@ function parseGerNumber(s: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
+async function scrapeDetail(card: ListCard, filters: SearchFilters): Promise<NormalizedListing | null> {
   return withPage(async (page) => {
     try {
       await gotoSafe(page, card.url);
@@ -167,6 +217,7 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
           fuel: getDetail('Kraftstoffart'),
           gearbox: getDetail('Getriebe'),
           bodyType: getDetail('Fahrzeugtyp'),
+          condition: getDetail('Zustand'),
           power: getDetail('Leistung'),
         };
       });
@@ -193,10 +244,12 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
             return m ? Number(m[1]) : null;
           })()
         : null;
+      const domain = filters.domain ?? 'cars';
 
       return {
         id: `kleinanzeigen:${card.platformId}`,
         source: 'kleinanzeigen',
+        domain,
         platformId: card.platformId,
         url: card.url,
         title,
@@ -205,8 +258,10 @@ async function scrapeDetail(card: ListCard): Promise<NormalizedListing | null> {
         year,
         fuel,
         gearbox,
-        bodyType: mapBodyType(data.bodyType),
-        power_kw,
+        bodyType: domain === 'cars' ? mapBodyType(data.bodyType) : null,
+        power_kw: domain === 'cars' ? power_kw : null,
+        category: domain === 'electronics' ? filters.category ?? 'phone' : null,
+        condition: domain === 'electronics' ? mapCondition(data.condition) : null,
         location: data.location || null,
         description: data.description || '',
         thumbnail: card.thumbnail,
@@ -244,11 +299,11 @@ export async function scrapeKleinanzeigen(
 
   const results = await runConcurrent(unique, 2, async (card) => {
     const cached = getCachedListing('kleinanzeigen', card.platformId);
-    if (cached) return cached;
-    const detail = await scrapeDetail(card);
-    if (detail) upsertListing(detail);
+    if (cached && (filters.domain ?? 'cars') === cached.domain) return cached;
+    const normalized = await scrapeDetail(card, filters);
+    if (normalized) upsertListing(normalized);
     await jitter(900, 2200);
-    return detail;
+    return normalized;
   }, (done) => opts.onProgress?.(done, unique.length));
 
   // Endgültiges Sicherheitsnetz: Baujahr/km/Kraftstoff/Preis gegen die Filter prüfen.
