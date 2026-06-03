@@ -136,13 +136,14 @@ a {
   display: flex;
   flex-direction: column;
   padding: 16px 12px;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
 }
 
 .rail-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
   padding: 4px 6px 16px;
   margin-bottom: 8px;
@@ -177,23 +178,29 @@ a {
   white-space: nowrap;
 }
 
-.rail-toggle {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--panel-2);
+/* Zuklapp-"Nupsi": kleiner Knopf mittig an der rechten Kante der Rail */
+.rail-nub {
+  position: absolute;
+  top: 50%;
+  right: -13px;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--panel-edge);
+  border-radius: 13px;
+  background: var(--panel-solid);
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(15, 23, 41, 0.14);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.rail-toggle:hover {
-  background: var(--accent-soft);
+.rail-nub:hover {
   color: var(--text);
+  box-shadow: 0 4px 12px rgba(15, 23, 41, 0.2);
 }
 
 .rail-section-label {
@@ -318,6 +325,42 @@ a {
   overflow-y: auto;
   opacity: 1;
   transition: opacity 0.2s ease;
+  /* Firefox: schlanke, dezente Scrollbar passend zum Glas */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Moderne, schlanke Scrollbar (WebKit/Chrome) — schwebt im Inhalt, dezent */
+.filter-panel::-webkit-scrollbar,
+.content::-webkit-scrollbar,
+.combo-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.filter-panel::-webkit-scrollbar-track,
+.content::-webkit-scrollbar-track,
+.combo-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.filter-panel::-webkit-scrollbar-thumb,
+.content::-webkit-scrollbar-thumb,
+.combo-list::-webkit-scrollbar-thumb {
+  background: rgba(20, 24, 31, 0.16);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+.filter-panel:hover::-webkit-scrollbar-thumb,
+.content:hover::-webkit-scrollbar-thumb,
+.combo-list:hover::-webkit-scrollbar-thumb {
+  background: rgba(20, 24, 31, 0.3);
+  background-clip: padding-box;
+}
+.content,
+.combo-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 .app-shell:not(.filter-is-open) .filter-panel {

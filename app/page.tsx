@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Car, Smartphone, PanelLeftClose, PanelLeftOpen, Minus, Plus } from 'lucide-react';
+import { Car, Smartphone, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import FilterForm from '@/components/FilterForm';
 import ResultCard from '@/components/ResultCard';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -107,16 +107,18 @@ export default function Page() {
             <div className="logo">AF</div>
             <span className="rail-label">AnzeigenFinder</span>
           </div>
-          <button
-            type="button"
-            className="rail-toggle"
-            onClick={() => setRailCollapsed((c) => !c)}
-            aria-label={railCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
-            title={railCollapsed ? 'Ausklappen' : 'Einklappen'}
-          >
-            {railCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-          </button>
         </div>
+
+        {/* Zuklapp-Knopf als kleiner "Nupsi" mittig an der rechten Kante */}
+        <button
+          type="button"
+          className="rail-nub"
+          onClick={() => setRailCollapsed((c) => !c)}
+          aria-label={railCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+          title={railCollapsed ? 'Ausklappen' : 'Einklappen'}
+        >
+          {railCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
 
         <div className="rail-section-label"><span className="rail-label">Suchbereich</span></div>
         <div className="rail-nav">
