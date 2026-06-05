@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { electronicsCategoryLabel } from './electronicsData';
+import { clothingCategoryLabel, clothingFitLabel, clothingSizeLabel } from './clothingData';
 import type { ListingScore, NormalizedListing, SearchDomain, SearchFilters } from './scrapers/types';
 import { getScore, saveScore } from './db';
 
@@ -62,6 +63,31 @@ const ELECTRONICS_RUBRIC = `Du bist ein erfahrener Gebraucht-Elektronik-Experte.
 
 Antworte auf Deutsch. Maximal 4 Einträge pro Liste (pros, cons, red_flags); die Listen dürfen leer sein.`;
 
+const CLOTHING_RUBRIC = `Du bist ein erfahrener Second-Hand-Mode-Experte. Du bewertest Inserate für Kleidung (Pullover, Jacken, Hosen) und gibst eine ehrliche Einschätzung für einen Privatkäufer.
+
+# Bewertungskriterien (Score 0-100)
+
+**Preis-Leistung (bis 25 Pkt):** Passt der Preis zu Marke, Modell, Material und Zustand? Markenkleidung in gutem Zustand zu fairem Preis ist top. Ein sehr niedriger Preis bei teurer Marke kann auf Fälschung oder Mängel hindeuten.
+
+**Zustand (bis 25 Pkt):** Werden Tragezustand, Flecken, Löcher, Pilling, defekte Reißverschlüsse/Knöpfe, Abnutzung oder Waschverhalten konkret beschrieben? "neuwertig", "nur einmal getragen", "ungetragen mit Etikett", "OVP" sind positiv. "stark getragen", "Loch", "Fleck", "Defekt" sind Minuspunkte.
+
+**Angaben zu Größe & Passform (bis 20 Pkt):** Sind Größe (z.B. M, L, XL bzw. Bundweite/Länge bei Hosen) und Schnitt (eng/slim oder weit/oversize) klar genannt? Maße in cm sind ein Plus. Fehlende Größenangaben sind kritisch.
+
+**Verkäufer-Signale (bis 15 Pkt):** Echte Fotos vom tatsächlichen Stück, klare Beschreibung, Material-/Pflegehinweise, Versand oder Abholung möglich. Generische Stockfotos oder sehr kurze Texte sind kritisch.
+
+**Passung zum Wunsch des Käufers (bis 15 Pkt):** Wie gut passt das Inserat zum Freitext-Wunsch (Stil, Marke, Größe, Schnitt, Anlass)?
+
+# Red Flags (immer auflisten, falls gefunden)
+
+- "Loch", "Fleck", "defekt", "kaputt", "Reißverschluss defekt"
+- Verdacht auf Fälschung / "Replika" / Markenware deutlich zu billig
+- Keine Größenangabe bei Kleidung
+- Nur Stockfotos statt echter Bilder
+- Starke Abnutzung, "Pilling", verwaschen, ausgeleiert
+- Nur Versand, kein Rückgaberecht bei teurer Ware
+
+Antworte auf Deutsch. Maximal 4 Einträge pro Liste (pros, cons, red_flags); die Listen dürfen leer sein.`;
+
 interface GeminiScore {
   score: number;
   summary: string;
@@ -98,6 +124,23 @@ function buildUserContent(l: NormalizedListing, filters: SearchFilters): string 
         gesuchte_marke: filters.make,
         gesuchtes_modell_oder_keyword: filters.keyword || filters.model,
         zustand: l.condition || filters.condition,
+      },
+      null,
+      2,
+    );
+  }
+
+  if (l.domain === 'clothing') {
+    return JSON.stringify(
+      {
+        ...base,
+        kleidungsstueck: clothingCategoryLabel(l.clothingCategory ?? filters.clothingCategory),
+        gesuchte_marke: filters.make,
+        gesuchter_begriff: filters.keyword || filters.model,
+        gesuchter_schnitt: clothingFitLabel(filters.clothingFit) ?? '(egal)',
+        gesuchte_groesse: clothingSizeLabel(filters.clothingSize) ?? '(egal)',
+        erkannter_schnitt: clothingFitLabel(l.clothingFit),
+        erkannte_groesse: clothingSizeLabel(l.clothingSize),
       },
       null,
       2,
@@ -208,7 +251,9 @@ export async function rankListing(
   const cached = getScore(l.id, wishHash);
   if (cached) return cached;
 
-  const parsed = await callGemini(buildUserContent(l, filters), l.domain === 'electronics' ? ELECTRONICS_RUBRIC : CAR_RUBRIC);
+  const rubric =
+    l.domain === 'electronics' ? ELECTRONICS_RUBRIC : l.domain === 'clothing' ? CLOTHING_RUBRIC : CAR_RUBRIC;
+  const parsed = await callGemini(buildUserContent(l, filters), rubric);
 
   const score: ListingScore = parsed
     ? {

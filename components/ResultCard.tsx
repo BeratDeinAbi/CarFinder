@@ -1,5 +1,6 @@
 import type { ScoredListing } from '@/lib/scrapers/types';
 import { electronicsCategoryLabel } from '@/lib/electronicsData';
+import { clothingCategoryLabel, clothingFitLabel, clothingSizeLabel } from '@/lib/clothingData';
 import ScoreBadge from './ScoreBadge';
 
 interface Props {
@@ -26,6 +27,7 @@ const CONDITION_LABEL: Record<string, string> = {
 
 export default function ResultCard({ listing: l }: Props) {
   const isElectronics = l.domain === 'electronics';
+  const isClothing = l.domain === 'clothing';
 
   return (
     <a href={l.url} target="_blank" rel="noopener noreferrer" className="card" style={{ color: 'inherit' }}>
@@ -41,6 +43,12 @@ export default function ResultCard({ listing: l }: Props) {
             <>
               {l.category && <span>{electronicsCategoryLabel(l.category)}</span>}
               {l.condition && l.condition !== 'any' && <span>{CONDITION_LABEL[l.condition] || l.condition}</span>}
+            </>
+          ) : isClothing ? (
+            <>
+              {l.clothingCategory && <span>{clothingCategoryLabel(l.clothingCategory)}</span>}
+              {clothingSizeLabel(l.clothingSize) && <span>Gr. {clothingSizeLabel(l.clothingSize)}</span>}
+              {clothingFitLabel(l.clothingFit) && <span>{clothingFitLabel(l.clothingFit)}</span>}
             </>
           ) : (
             <>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Car, Smartphone, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { Car, Smartphone, Shirt, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import FilterForm from '@/components/FilterForm';
 import ResultCard from '@/components/ResultCard';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -10,6 +10,7 @@ import type { JobInfo, ScoredListing, SearchDomain, SearchFilters } from '@/lib/
 const NAV_ITEMS: { value: SearchDomain; label: string; Icon: typeof Car }[] = [
   { value: 'cars', label: 'Autos', Icon: Car },
   { value: 'electronics', label: 'Elektrogeräte', Icon: Smartphone },
+  { value: 'clothing', label: 'Klamotten', Icon: Shirt },
 ];
 
 interface JobResponse {
@@ -83,7 +84,8 @@ export default function Page() {
   const isRunning = job && job.status !== 'done' && job.status !== 'error';
   const scoreProgress = job && job.totalFound > 0 ? (job.totalScored / job.totalFound) * 100 : 0;
   const activeDomain = job?.filters.domain ?? 'cars';
-  const resultTypeLabel = activeDomain === 'electronics' ? 'Elektrogeräte' : 'Autos';
+  const resultTypeLabel =
+    activeDomain === 'electronics' ? 'Elektrogeräte' : activeDomain === 'clothing' ? 'Kleidungsstücke' : 'Autos';
 
   const activeNav = NAV_ITEMS.find((n) => n.value === domain)!;
 

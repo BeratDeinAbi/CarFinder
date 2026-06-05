@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import { withPage, jitter, runConcurrent, detectBlock } from './browser';
 import { getCachedListing, upsertListing } from '../db';
-import type { BodyType, ElectronicsCategory, ElectronicsCondition, Fuel, Gearbox, NormalizedListing, SearchFilters } from './types';
+import type { BodyType, ClothingCategory, ClothingFit, ClothingSize, ElectronicsCategory, ElectronicsCondition, Fuel, Gearbox, NormalizedListing, SearchFilters } from './types';
 
 const BASE = 'https://www.kleinanzeigen.de';
 const ELECTRONICS_CATEGORY_CONFIG: Record<ElectronicsCategory, { path: string; code: string; fallbackKeyword: string }> = {
@@ -9,6 +9,16 @@ const ELECTRONICS_CATEGORY_CONFIG: Record<ElectronicsCategory, { path: string; c
   monitor: { path: 's-pc-zubehoer-software', code: 'c225', fallbackKeyword: 'monitor' },
   laptop: { path: 's-notebooks', code: 'c278', fallbackKeyword: 'laptop' },
   pc: { path: 's-pcs', code: 'c228', fallbackKeyword: 'pc' },
+};
+
+// Klamotten: Kleinanzeigen führt Mode unter "Bekleidung" (c153). Die Kategorie
+// (Pullover/Jacke/Hose) wird als Keyword in den Slug gepackt; Schnitt/Größe
+// filtern wir nach dem Scrapen aus Titel/Beschreibung.
+const CLOTHING_CONFIG = { path: 's-bekleidung', code: 'c153' };
+const CLOTHING_CATEGORY_KEYWORD: Record<ClothingCategory, string> = {
+  sweater: 'pullover',
+  jacket: 'jacke',
+  pants: 'hose',
 };
 
 function slugify(parts: Array<string | undefined>): string {
@@ -94,10 +104,27 @@ function buildElectronicsSearchUrl(f: SearchFilters, page: number, locationId: s
   return withLocationQuery(base, locationId, f.radiusKm);
 }
 
+function buildClothingSearchUrl(f: SearchFilters, page: number, locationId: string | null): string {
+  const category = f.clothingCategory ?? 'sweater';
+  const categoryWord = CLOTHING_CATEGORY_KEYWORD[category];
+  // Schnitt (nur Hose) und Größe (nur Pullover/Jacke) als zusätzliche Suchbegriffe,
+  // damit Kleinanzeigen schon vorfiltert. Das harte Filtern macht matchesFilters().
+  const fitWord = f.clothingFit && f.clothingFit !== 'any' ? (f.clothingFit === 'slim' ? 'eng' : 'weit') : undefined;
+  const sizeWord = f.clothingSize && f.clothingSize !== 'any' ? f.clothingSize : undefined;
+  const slug = slugify([f.make, categoryWord, f.keyword || f.model, fitWord, sizeWord]);
+  const priceSeg = f.priceMin || f.priceMax ? `/preis:${f.priceMin ?? ''}:${f.priceMax ?? ''}` : '';
+  const pageSeg = page > 1 ? `/seite:${page}` : '';
+
+  const base = slug
+    ? `${BASE}/${CLOTHING_CONFIG.path}${priceSeg}/${slug}${pageSeg}/k0${CLOTHING_CONFIG.code}`
+    : `${BASE}/${CLOTHING_CONFIG.path}${priceSeg}${pageSeg}/${CLOTHING_CONFIG.code}`;
+  return withLocationQuery(base, locationId, f.radiusKm);
+}
+
 function buildSearchUrl(f: SearchFilters, page: number, locationId: string | null): string {
-  return f.domain === 'electronics'
-    ? buildElectronicsSearchUrl(f, page, locationId)
-    : buildCarSearchUrl(f, page, locationId);
+  if (f.domain === 'electronics') return buildElectronicsSearchUrl(f, page, locationId);
+  if (f.domain === 'clothing') return buildClothingSearchUrl(f, page, locationId);
+  return buildCarSearchUrl(f, page, locationId);
 }
 
 // "Reserviert • Gelöscht • …" sind Boilerplate-Badges im Detail-Titel. Entfernen.
@@ -134,12 +161,39 @@ function mapCondition(raw: string | null): ElectronicsCondition | null {
   return null;
 }
 
+// Schnitt (breit/eng) aus dem Anzeigentext ableiten. Nur relevant für Hosen.
+function mapClothingFit(text: string): ClothingFit | null {
+  const s = text.toLowerCase();
+  if (/\b(slim|skinny|eng|tight|röhre|roehre|figurbetont|schmal)\b/.test(s)) return 'slim';
+  if (/\b(weit|breit|wide|baggy|loose|relaxed|bootcut|oversize|oversized|straight|locker)\b/.test(s)) return 'wide';
+  return null;
+}
+
+// Konfektionsgröße (XS–XXL) aus dem Anzeigentext ableiten. Für Pullover/Jacken.
+function mapClothingSize(text: string): ClothingSize | null {
+  const s = text.toUpperCase();
+  // Längste Schreibweisen zuerst prüfen, damit "XXL" nicht als "XL"/"L" greift.
+  if (/\b(XXL|2XL)\b/.test(s) || /GR(?:ÖSSE|OESSE|\.)?\s*XXL/.test(s)) return 'XXL';
+  if (/\bXL\b/.test(s) || /GR(?:ÖSSE|OESSE|\.)?\s*XL/.test(s)) return 'XL';
+  if (/\bXS\b/.test(s) || /GR(?:ÖSSE|OESSE|\.)?\s*XS/.test(s)) return 'XS';
+  if (/\bL\b/.test(s) || /GR(?:ÖSSE|OESSE|\.)?\s*L\b/.test(s)) return 'L';
+  if (/\bM\b/.test(s) || /GR(?:ÖSSE|OESSE|\.)?\s*M\b/.test(s)) return 'M';
+  if (/\bS\b/.test(s) || /GR(?:ÖSSE|OESSE|\.)?\s*S\b/.test(s)) return 'S';
+  return null;
+}
+
 // Sicherheitsnetz: nur Anzeigen behalten, die wirklich zu den Filtern passen.
 function matchesFilters(l: NormalizedListing, f: SearchFilters): boolean {
   if (f.priceMin != null && l.price != null && l.price < f.priceMin) return false;
   if (f.priceMax != null && l.price != null && l.price > f.priceMax) return false;
   if (f.domain === 'electronics') {
     if (f.condition && f.condition !== 'any' && l.condition && l.condition !== f.condition) return false;
+    return true;
+  }
+  if (f.domain === 'clothing') {
+    // Nur filtern, wenn das Inserat einen Wert hergibt (sonst durchlassen — wie bei Karosserie).
+    if (f.clothingFit && f.clothingFit !== 'any' && l.clothingFit && l.clothingFit !== f.clothingFit) return false;
+    if (f.clothingSize && f.clothingSize !== 'any' && l.clothingSize && l.clothingSize !== f.clothingSize) return false;
     return true;
   }
   if (f.yearMin != null && l.year != null && l.year < f.yearMin) return false;
@@ -271,6 +325,7 @@ async function scrapeDetail(card: ListCard, filters: SearchFilters): Promise<Nor
           })()
         : null;
       const domain = filters.domain ?? 'cars';
+      const clothingText = domain === 'clothing' ? `${title} ${data.description || ''}` : '';
 
       return {
         id: `kleinanzeigen:${card.platformId}`,
@@ -288,6 +343,9 @@ async function scrapeDetail(card: ListCard, filters: SearchFilters): Promise<Nor
         power_kw: domain === 'cars' ? power_kw : null,
         category: domain === 'electronics' ? filters.category ?? 'phone' : null,
         condition: domain === 'electronics' ? mapCondition(data.condition) : null,
+        clothingCategory: domain === 'clothing' ? filters.clothingCategory ?? 'sweater' : null,
+        clothingFit: domain === 'clothing' ? mapClothingFit(clothingText) : null,
+        clothingSize: domain === 'clothing' ? mapClothingSize(clothingText) : null,
         location: data.location || null,
         description: data.description || '',
         thumbnail: card.thumbnail,

@@ -1,6 +1,8 @@
 # CarFinder
 
-Lokales Dashboard, das Gebrauchtwagen-Inserate auf **mobile.de** und **Kleinanzeigen.de** sowie Elektrogeräte auf **Kleinanzeigen.de** sucht und sie von einem **KI-Modell (Google Gemini, kostenloser Tarif)** lesen und bewerten lässt. Du wählst zuerst, ob du Autos oder Elektrogeräte finden möchtest, gibst passende Filter und einen Freitext-Wunsch ein („Familienauto, viel Platz, zuverlässig" oder „Laptop für Uni, guter Akku"), und die App zeigt dir die Treffer als Ranking mit Score, Zusammenfassung und Red Flags pro Anzeige.
+Lokales Dashboard, das Gebrauchtwagen-Inserate auf **mobile.de** und **Kleinanzeigen.de** sowie Elektrogeräte und Klamotten auf **Kleinanzeigen.de** sucht und sie von einem **KI-Modell (Google Gemini, kostenloser Tarif)** lesen und bewerten lässt. Du wählst zuerst, ob du Autos, Elektrogeräte oder Klamotten finden möchtest, gibst passende Filter und einen Freitext-Wunsch ein („Familienauto, viel Platz, zuverlässig", „Laptop für Uni, guter Akku" oder „Pullover Größe L, guter Zustand"), und die App zeigt dir die Treffer als Ranking mit Score, Zusammenfassung und Red Flags pro Anzeige.
+
+Bei **Klamotten** wählst du als Kategorie **Pullover**, **Jacke** oder **Hose**: Bei Hosen filterst du zusätzlich nach Schnitt (**breit/eng**), bei Pullovern und Jacken nach **Größe** (XS–XXL).
 
 ## Setup
 
@@ -20,9 +22,9 @@ Dann <http://localhost:3000> öffnen.
 1. Du wählst den Suchbereich und füllst Filter aus → POST an `/api/search` → ein Job wird in SQLite angelegt
 2. Im Hintergrund:
    - **Playwright** (mit Stealth-Plugin, Delays, UA-Rotation) ruft die passende Kleinanzeigen-Suchseite auf, parst die Trefferkarten und holt die Detail-Pages
-   - Ein Code-Filter wirft unpassende Treffer raus; bei Autos u. a. Preis/Baujahr/km/Kraftstoff, bei Elektrogeräten Preis und Zustand
+   - Ein Code-Filter wirft unpassende Treffer raus; bei Autos u. a. Preis/Baujahr/km/Kraftstoff, bei Elektrogeräten Preis und Zustand, bei Klamotten Preis sowie Schnitt (Hose) bzw. Größe (Pullover/Jacke)
    - Jede Anzeige wird normalisiert in SQLite gespeichert (Cache 24 h)
-   - **Gemini** (Gratis-Tarif) liest jede Beschreibung mit einer passenden Auto- oder Elektrogeräte-Rubrik und gibt strukturiertes JSON zurück: `score 0-100`, `summary`, `pros`, `cons`, `red_flags`
+   - **Gemini** (Gratis-Tarif) liest jede Beschreibung mit einer passenden Auto-, Elektrogeräte- oder Klamotten-Rubrik und gibt strukturiertes JSON zurück: `score 0-100`, `summary`, `pros`, `cons`, `red_flags`
 3. Das Frontend pollt `/api/jobs/:id` alle 2 s und zeigt Live-Fortschritt + Ergebnisse sortiert nach Score
 
 ## Tech-Stack

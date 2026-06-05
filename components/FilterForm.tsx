@@ -1,8 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Car, Wallet, SlidersHorizontal, Package, MapPin } from 'lucide-react';
-import type { BodyType, ElectronicsCategory, ElectronicsCondition, Fuel, SearchDomain, SearchFilters } from '@/lib/scrapers/types';
+import { Car, Wallet, SlidersHorizontal, Package, MapPin, Shirt } from 'lucide-react';
+import type {
+  BodyType,
+  ClothingCategory,
+  ClothingFit,
+  ClothingSize,
+  ElectronicsCategory,
+  ElectronicsCondition,
+  Fuel,
+  SearchDomain,
+  SearchFilters,
+} from '@/lib/scrapers/types';
 import { BRANDS, modelsForBrand } from '@/lib/carData';
 import {
   ELECTRONICS_CATEGORIES,
@@ -11,6 +21,15 @@ import {
   electronicsCategoryPlural,
   electronicsModelsFor,
 } from '@/lib/electronicsData';
+import {
+  CLOTHING_BRANDS,
+  CLOTHING_CATEGORIES,
+  CLOTHING_FITS,
+  CLOTHING_SIZES,
+  clothingCategoryPlural,
+  clothingUsesFit,
+  clothingUsesSize,
+} from '@/lib/clothingData';
 import Combobox from './Combobox';
 
 const BODY_TYPES: { value: BodyType | 'any'; label: string }[] = [
@@ -45,6 +64,11 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
   const [electronicsBrand, setElectronicsBrand] = useState('Apple');
   const [electronicsQuery, setElectronicsQuery] = useState('iPhone');
   const [condition, setCondition] = useState<ElectronicsCondition>('any');
+  const [clothingCategory, setClothingCategory] = useState<ClothingCategory>('sweater');
+  const [clothingBrand, setClothingBrand] = useState('');
+  const [clothingQuery, setClothingQuery] = useState('');
+  const [clothingFit, setClothingFit] = useState<ClothingFit>('any');
+  const [clothingSize, setClothingSize] = useState<ClothingSize>('any');
   const [priceMin, setPriceMin] = useState('5000');
   const [priceMax, setPriceMax] = useState('15000');
   const [yearMin, setYearMin] = useState('');
@@ -87,6 +111,10 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
       setPriceMin('5000');
       setPriceMax('15000');
       setWish('alltagstauglich, zuverlässig, wenig Reparaturen');
+    } else if (domain === 'clothing') {
+      setPriceMin('');
+      setPriceMax('60');
+      setWish('guter Zustand, keine Flecken oder Löcher, fairer Preis');
     } else {
       setPriceMin('');
       setPriceMax('800');
@@ -112,6 +140,14 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
     }
   };
 
+  // Beim Wechsel der Klamotten-Kategorie die nicht passenden Filter zurücksetzen:
+  // Hosen kennen keine Größe, Pullover/Jacken keinen Schnitt.
+  const handleClothingCategoryChange = (val: ClothingCategory) => {
+    setClothingCategory(val);
+    if (!clothingUsesFit(val)) setClothingFit('any');
+    if (!clothingUsesSize(val)) setClothingSize('any');
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const shared = {
@@ -124,28 +160,48 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
       wish: wish.trim() || undefined,
     };
 
-    const filters: SearchFilters = domain === 'cars' ? {
-      ...shared,
-      domain: 'cars',
-      yearMin: yearMin ? Number(yearMin) : undefined,
-      yearMax: yearMax ? Number(yearMax) : undefined,
-      kmMax: kmMax ? Number(kmMax) : undefined,
-      fuels: fuels.length ? fuels : undefined,
-      gearbox,
-      bodyType,
-    } : {
-      domain: 'electronics',
-      category: electronicsCategory,
-      make: electronicsBrand.trim() || undefined,
-      model: electronicsQuery.trim() || undefined,
-      keyword: electronicsQuery.trim() || undefined,
-      condition,
-      priceMin: shared.priceMin,
-      priceMax: shared.priceMax,
-      zip: shared.zip,
-      radiusKm: shared.radiusKm,
-      wish: shared.wish,
-    };
+    let filters: SearchFilters;
+    if (domain === 'cars') {
+      filters = {
+        ...shared,
+        domain: 'cars',
+        yearMin: yearMin ? Number(yearMin) : undefined,
+        yearMax: yearMax ? Number(yearMax) : undefined,
+        kmMax: kmMax ? Number(kmMax) : undefined,
+        fuels: fuels.length ? fuels : undefined,
+        gearbox,
+        bodyType,
+      };
+    } else if (domain === 'clothing') {
+      filters = {
+        domain: 'clothing',
+        clothingCategory,
+        clothingFit: clothingUsesFit(clothingCategory) ? clothingFit : 'any',
+        clothingSize: clothingUsesSize(clothingCategory) ? clothingSize : 'any',
+        make: clothingBrand.trim() || undefined,
+        model: clothingQuery.trim() || undefined,
+        keyword: clothingQuery.trim() || undefined,
+        priceMin: shared.priceMin,
+        priceMax: shared.priceMax,
+        zip: shared.zip,
+        radiusKm: shared.radiusKm,
+        wish: shared.wish,
+      };
+    } else {
+      filters = {
+        domain: 'electronics',
+        category: electronicsCategory,
+        make: electronicsBrand.trim() || undefined,
+        model: electronicsQuery.trim() || undefined,
+        keyword: electronicsQuery.trim() || undefined,
+        condition,
+        priceMin: shared.priceMin,
+        priceMax: shared.priceMax,
+        zip: shared.zip,
+        radiusKm: shared.radiusKm,
+        wish: shared.wish,
+      };
+    }
     onSubmit(filters);
   };
 
@@ -232,6 +288,77 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
             </div>
           </div>
         </>
+      ) : domain === 'clothing' ? (
+        <>
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><Shirt size={14} strokeWidth={1.8} /></span>Kleidungsstück</div>
+            <div className="field">
+              <label>Kategorie</label>
+              <select value={clothingCategory} onChange={(e) => handleClothingCategoryChange(e.target.value as ClothingCategory)}>
+                {CLOTHING_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {clothingUsesFit(clothingCategory) && (
+              <div className="field">
+                <label>Schnitt</label>
+                <select value={clothingFit} onChange={(e) => setClothingFit(e.target.value as ClothingFit)}>
+                  {CLOTHING_FITS.map((fit) => (
+                    <option key={fit.value} value={fit.value}>
+                      {fit.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {clothingUsesSize(clothingCategory) && (
+              <div className="field">
+                <label>Größe</label>
+                <select value={clothingSize} onChange={(e) => setClothingSize(e.target.value as ClothingSize)}>
+                  {CLOTHING_SIZES.map((size) => (
+                    <option key={size.value} value={size.value}>
+                      {size.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="field">
+              <label>Marke</label>
+              <Combobox
+                value={clothingBrand}
+                onChange={setClothingBrand}
+                options={CLOTHING_BRANDS}
+                placeholder="Beliebig — tippen oder wählen…"
+                anyLabel="Beliebig (alle Marken)"
+              />
+            </div>
+            <div className="field">
+              <label>Suchbegriff (optional)</label>
+              <Combobox
+                value={clothingQuery}
+                onChange={setClothingQuery}
+                options={[]}
+                placeholder={`${clothingCategoryPlural(clothingCategory)} suchen…`}
+                anyLabel="Beliebig"
+              />
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <div className="filter-section-title"><span className="fs-icon" aria-hidden><Wallet size={14} strokeWidth={1.8} /></span>Preis</div>
+            <div className="field">
+              <label>Preis (€)</label>
+              <div className="row-2">
+                <input type="number" inputMode="numeric" min={0} step={5} placeholder="beliebig" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
+                <input type="number" inputMode="numeric" min={0} step={5} placeholder="beliebig" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+              </div>
+            </div>
+          </div>
+        </>
       ) : (
         <>
           <div className="filter-section">
@@ -311,7 +438,13 @@ export default function FilterForm({ onSubmit, disabled, domain }: Props) {
       </div>
 
       <button type="submit" className="btn" disabled={disabled}>
-        {disabled ? 'Suche läuft…' : domain === 'cars' ? 'Autos finden' : `${electronicsCategoryPlural(electronicsCategory)} finden`}
+        {disabled
+          ? 'Suche läuft…'
+          : domain === 'cars'
+          ? 'Autos finden'
+          : domain === 'clothing'
+          ? `${clothingCategoryPlural(clothingCategory)} finden`
+          : `${electronicsCategoryPlural(electronicsCategory)} finden`}
       </button>
     </form>
   );

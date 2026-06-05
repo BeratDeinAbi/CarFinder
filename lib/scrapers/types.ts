@@ -1,11 +1,17 @@
 export type Source = 'mobile' | 'kleinanzeigen';
-export type SearchDomain = 'cars' | 'electronics';
+export type SearchDomain = 'cars' | 'electronics' | 'clothing';
 
 export type Fuel = 'petrol' | 'diesel' | 'hybrid' | 'electric' | 'other';
 export type Gearbox = 'manual' | 'automatic' | 'other';
 export type BodyType = 'estate' | 'sedan' | 'convertible' | 'suv' | 'small' | 'coupe' | 'van' | 'other';
 export type ElectronicsCategory = 'phone' | 'monitor' | 'laptop' | 'pc';
 export type ElectronicsCondition = 'any' | 'new' | 'like_new' | 'good' | 'used' | 'defective';
+
+// Klamotten: Pullover, Jacke oder Hose. Bei Hosen filtert man nach Schnitt
+// (breit/eng), bei Pullover/Jacke nach Größe.
+export type ClothingCategory = 'sweater' | 'jacket' | 'pants';
+export type ClothingFit = 'any' | 'wide' | 'slim';
+export type ClothingSize = 'any' | 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
 
 export interface SearchFilters {
   domain?: SearchDomain;
@@ -21,6 +27,9 @@ export interface SearchFilters {
   bodyType?: BodyType | 'any';
   category?: ElectronicsCategory;
   condition?: ElectronicsCondition;
+  clothingCategory?: ClothingCategory;
+  clothingFit?: ClothingFit | 'any';
+  clothingSize?: ClothingSize | 'any';
   keyword?: string;
   zip?: string;
   radiusKm?: number;
@@ -43,6 +52,9 @@ export interface NormalizedListing {
   power_kw: number | null;
   category: ElectronicsCategory | null;
   condition: ElectronicsCondition | null;
+  clothingCategory: ClothingCategory | null;
+  clothingFit: ClothingFit | null;
+  clothingSize: ClothingSize | null;
   location: string | null;
   description: string;
   thumbnail: string | null;

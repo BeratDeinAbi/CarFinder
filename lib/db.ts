@@ -40,6 +40,9 @@ function db(): DatabaseSync {
       power_kw INTEGER,
       category TEXT,
       condition TEXT,
+      clothing_category TEXT,
+      clothing_fit TEXT,
+      clothing_size TEXT,
       location TEXT,
       description TEXT NOT NULL,
       thumbnail TEXT,
@@ -79,6 +82,15 @@ function db(): DatabaseSync {
   }
   if (!cols.some((c) => c.name === 'condition')) {
     _db.exec(`ALTER TABLE listings ADD COLUMN condition TEXT`);
+  }
+  if (!cols.some((c) => c.name === 'clothing_category')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN clothing_category TEXT`);
+  }
+  if (!cols.some((c) => c.name === 'clothing_fit')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN clothing_fit TEXT`);
+  }
+  if (!cols.some((c) => c.name === 'clothing_size')) {
+    _db.exec(`ALTER TABLE listings ADD COLUMN clothing_size TEXT`);
   }
 
   return _db;
@@ -136,12 +148,13 @@ export function getJob(id: string): JobInfo | null {
 export function upsertListing(l: NormalizedListing): void {
   db()
     .prepare(
-      `INSERT INTO listings (id, source, domain, platform_id, url, title, price, km, year, fuel, gearbox, body_type, power_kw, category, condition, location, description, thumbnail, fetched_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO listings (id, source, domain, platform_id, url, title, price, km, year, fuel, gearbox, body_type, power_kw, category, condition, clothing_category, clothing_fit, clothing_size, location, description, thumbnail, fetched_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(source, platform_id) DO UPDATE SET
          title=excluded.title, price=excluded.price, km=excluded.km, year=excluded.year,
          fuel=excluded.fuel, gearbox=excluded.gearbox, body_type=excluded.body_type, power_kw=excluded.power_kw,
          domain=excluded.domain, category=excluded.category, condition=excluded.condition,
+         clothing_category=excluded.clothing_category, clothing_fit=excluded.clothing_fit, clothing_size=excluded.clothing_size,
          location=excluded.location, description=excluded.description,
          thumbnail=excluded.thumbnail, fetched_at=excluded.fetched_at`,
     )
@@ -161,6 +174,9 @@ export function upsertListing(l: NormalizedListing): void {
       l.power_kw,
       l.category,
       l.condition,
+      l.clothingCategory,
+      l.clothingFit,
+      l.clothingSize,
       l.location,
       l.description,
       l.thumbnail,
@@ -199,6 +215,9 @@ function rowToListing(row: any): NormalizedListing {
     power_kw: row.power_kw,
     category: row.category ?? null,
     condition: row.condition ?? null,
+    clothingCategory: row.clothing_category ?? null,
+    clothingFit: row.clothing_fit ?? null,
+    clothingSize: row.clothing_size ?? null,
     location: row.location,
     description: row.description,
     thumbnail: row.thumbnail,
